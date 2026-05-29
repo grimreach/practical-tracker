@@ -18,6 +18,7 @@ dist/
 
 # Prisma
 prisma/migrations/
+src/generated/
 
 # Misc
 .DS_Store
