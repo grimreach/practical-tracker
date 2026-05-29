@@ -13,7 +13,7 @@ const schema = z.object({
   notes:    z.string().optional(),
 })
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const expenses = await prisma.expense.findMany({ where: { userId: session.user.id }, orderBy: { date: 'desc' } })

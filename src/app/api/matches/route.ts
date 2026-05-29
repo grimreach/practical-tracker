@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import type { Discipline } from '@/generated/prisma/client'
 import { z } from 'zod'
 
 const stageSchema = z.object({
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest) {
   const matches = await prisma.match.findMany({
     where: {
       userId: session.user.id,
-      ...(discipline ? { discipline: discipline as any } : {}),
+      ...(discipline ? { discipline: discipline as Discipline } : {}),
     },
     include: { stages: { orderBy: { stageNum: 'asc' } }, gun: true },
     orderBy: { date: 'desc' },
