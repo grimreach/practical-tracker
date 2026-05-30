@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-30
 
-Current app version: v0.12.1
+Current app version: v0.13.0
 
 ## Product direction
 
@@ -117,6 +117,8 @@ Status: proposed
 - [x] Cleanup pass: make gun build parts more editable by allowing saved part prices to be adjusted inline before saving the build.
 - [ ] Cleanup pass: consolidate repeated dashboard card styles, relationship labels, and chart empty states.
 - [ ] Feature pass: add PractiScore CSV import preview and confirm flow.
+  - [x] Preview uploaded/exported PractiScore CSV rows with match/stage counts and detected scoring fields before any mutation.
+  - [ ] Add confirm/apply flow after preview once mapping choices are settled.
 - [ ] Feature pass: add workbook/spreadsheet import as a separate non-overlapping flow.
 - [ ] Feature pass: add iOS companion API contracts for authenticated sync.
 - [ ] Feature pass: plan Bluetooth chrono capture around normalized chrono/load records.

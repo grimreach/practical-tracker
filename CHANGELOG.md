@@ -4,6 +4,19 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.13.0] - 2026-05-30
+
+### Added
+
+- Added PractiScore CSV import preview support to `/api/import/preview` using `workflow: "practiscore-csv-v1"`.
+- Added CSV preview parsing for match counts, stage counts, sample stages, and detected scoring fields before any data mutation.
+- Added framework-free tests for PractiScore CSV preview acceptance and empty-file rejection.
+
+### Changed
+
+- Advanced the Phase 7 PractiScore import track with preview complete and confirm/apply still pending.
+- Bumped app version from `0.12.1` to `0.13.0`.
+
 ## [0.12.1] - 2026-05-30
 
 ### Fixed
