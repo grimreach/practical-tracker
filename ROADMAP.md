@@ -1,7 +1,7 @@
 # Practical Tracker Roadmap
 
 Last updated: 2026-05-29  
-Current app version: v0.10.0
+Current app version: v0.10.1
 
 ## Product direction
 
@@ -100,7 +100,7 @@ Acceptance criteria:
 Status: in progress
 
 - [x] Add automated tests for API routes and core form workflows.
-- [ ] Add component smoke tests for major dashboard tabs.
+- [x] Add component smoke tests for major dashboard tabs.
 - [ ] Resolve dependency audit advisories in a dedicated maintenance PR.
 - [ ] Document deployment and release process.
 - [ ] Add import/export workflow for user data.

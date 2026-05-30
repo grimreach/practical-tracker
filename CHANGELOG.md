@@ -4,6 +4,19 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.10.1] - 2026-05-29
+
+### Added
+
+- Added Phase 6 dashboard component smoke contracts for every major signed-in tab: Overview, Matches, Gun Builds, Expenses, Chrono, and Maintenance.
+- Added framework-free component smoke tests that verify each tab contract, API dependency, component export, primary heading, and empty-state anchor.
+
+### Changed
+
+- Wired the dashboard tab registry to the smoke contracts so tab labels/descriptions and tests share one source of truth.
+- Added stable dashboard tab smoke targets for future browser or component smoke paths.
+- Bumped app version from `0.10.0` to `0.10.1`.
+
 ## [0.10.0] - 2026-05-29
 
 ### Added

@@ -2,6 +2,10 @@
 
 import { Activity, Banknote, Crosshair, Gauge, Sparkles, Target, TrendingUp, Wrench } from 'lucide-react'
 import { useState } from 'react'
+import {
+  DASHBOARD_TAB_SMOKE_CONTRACTS,
+  DEFAULT_DASHBOARD_TAB_ID,
+} from '@/lib/dashboard-component-smoke.mjs'
 import { ChronoDashboard } from './chrono-dashboard'
 import { ExpensesDashboard } from './expenses-dashboard'
 import { GunsDashboard } from './guns-dashboard'
@@ -11,19 +15,28 @@ import { SeasonOverviewDashboard } from './season-overview-dashboard'
 
 type Tab = 'overview' | 'matches' | 'guns' | 'expenses' | 'chrono' | 'maintenance'
 
-const tabs: Array<{
+type DashboardTabSmokeContract = {
   id: Tab
   label: string
   description: string
   icon: React.ComponentType<{ className?: string }>
-}> = [
-  { id: 'overview', label: 'Overview', description: 'Season signals, next actions', icon: TrendingUp },
-  { id: 'matches', label: 'Matches', description: 'Results, stage notes, video', icon: Activity },
-  { id: 'guns', label: 'Gun Builds', description: 'Photos, parts, build cost', icon: Crosshair },
-  { id: 'expenses', label: 'Expenses', description: 'Fees, ammo, parts, travel', icon: Banknote },
-  { id: 'chrono', label: 'Chrono', description: 'Loads, velocity, power factor', icon: Gauge },
-  { id: 'maintenance', label: 'Maintenance', description: 'Round counts, service alerts', icon: Wrench },
-]
+}
+
+const tabIcons: Record<Tab, React.ComponentType<{ className?: string }>> = {
+  overview: TrendingUp,
+  matches: Activity,
+  guns: Crosshair,
+  expenses: Banknote,
+  chrono: Gauge,
+  maintenance: Wrench,
+}
+
+const tabs: DashboardTabSmokeContract[] = DASHBOARD_TAB_SMOKE_CONTRACTS.map((tab) => ({
+  id: tab.id as Tab,
+  label: tab.label,
+  description: tab.description,
+  icon: tabIcons[tab.id as Tab],
+}))
 
 const quickStats = [
   { label: 'Current focus', value: 'Season overview', icon: Target },
@@ -32,7 +45,7 @@ const quickStats = [
 ]
 
 export function AppDashboard() {
-  const [activeTab, setActiveTab] = useState<Tab>('overview')
+  const [activeTab, setActiveTab] = useState<Tab>(DEFAULT_DASHBOARD_TAB_ID as Tab)
 
   return (
     <div className="grid gap-6">
@@ -80,6 +93,8 @@ export function AppDashboard() {
               type="button"
               onClick={() => setActiveTab(tab.id)}
               className={`dashboard-tab ${isActive ? 'is-active' : ''}`}
+              data-smoke-target={`dashboard-tab-${tab.id}`}
+              aria-pressed={isActive}
             >
               <span className="tab-icon">
                 <Icon className="h-4 w-4" />
