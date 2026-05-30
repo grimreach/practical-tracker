@@ -4,6 +4,19 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.7.0] - 2026-05-29
+
+### Added
+
+- Added a signed-in Season Overview dashboard as the first workspace tab.
+- Added season metrics for matches shot, total rounds, total spend, average percentile, current power factor, maintenance status, and video-ready stages.
+- Added recent match cards, recent stage video links, and recommended next action cards driven by match, expense, chrono, and maintenance data.
+- Added framework-free tests for season overview metric aggregation, maintenance signals, video stage selection, and next-action recommendations.
+
+### Changed
+
+- Bumped app version from `0.6.0` to `0.7.0`.
+
 ## [0.6.0] - 2026-05-29
 
 ### Added

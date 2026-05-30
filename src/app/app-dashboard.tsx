@@ -1,14 +1,15 @@
 'use client'
 
-import { Activity, Banknote, Crosshair, Gauge, Sparkles, Target, Wrench } from 'lucide-react'
+import { Activity, Banknote, Crosshair, Gauge, Sparkles, Target, TrendingUp, Wrench } from 'lucide-react'
 import { useState } from 'react'
 import { ChronoDashboard } from './chrono-dashboard'
 import { ExpensesDashboard } from './expenses-dashboard'
 import { GunsDashboard } from './guns-dashboard'
 import { MaintenanceDashboard } from './maintenance-dashboard'
 import { MatchesDashboard } from './matches-dashboard'
+import { SeasonOverviewDashboard } from './season-overview-dashboard'
 
-type Tab = 'matches' | 'guns' | 'expenses' | 'chrono' | 'maintenance'
+type Tab = 'overview' | 'matches' | 'guns' | 'expenses' | 'chrono' | 'maintenance'
 
 const tabs: Array<{
   id: Tab
@@ -16,6 +17,7 @@ const tabs: Array<{
   description: string
   icon: React.ComponentType<{ className?: string }>
 }> = [
+  { id: 'overview', label: 'Overview', description: 'Season signals, next actions', icon: TrendingUp },
   { id: 'matches', label: 'Matches', description: 'Results, stage notes, video', icon: Activity },
   { id: 'guns', label: 'Gun Builds', description: 'Photos, parts, build cost', icon: Crosshair },
   { id: 'expenses', label: 'Expenses', description: 'Fees, ammo, parts, travel', icon: Banknote },
@@ -24,13 +26,13 @@ const tabs: Array<{
 ]
 
 const quickStats = [
-  { label: 'Current focus', value: 'Match review', icon: Target },
-  { label: 'Primary signal', value: 'Cost per round', icon: Banknote },
-  { label: 'Next workspace', value: 'Chrono UI', icon: Gauge },
+  { label: 'Current focus', value: 'Season overview', icon: Target },
+  { label: 'Primary signal', value: 'Next action', icon: TrendingUp },
+  { label: 'Connected data', value: 'Matches + cost', icon: Banknote },
 ]
 
 export function AppDashboard() {
-  const [activeTab, setActiveTab] = useState<Tab>('matches')
+  const [activeTab, setActiveTab] = useState<Tab>('overview')
 
   return (
     <div className="grid gap-6">
@@ -44,11 +46,11 @@ export function AppDashboard() {
               <span className="sport-pill">Open-source</span>
             </div>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
-              Log the match. Learn the pattern. Reduce the noise.
+              Start with the season signal, then drill into the work.
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-600">
-              The interface is organized around the practical shooter workflow: record the result,
-              capture context, connect cost, then review what needs attention before the next match.
+              The first signed-in view now answers how you are doing, what you spent,
+              and what needs attention next — with tabs for the deeper match, cost, chrono, and maintenance work.
             </p>
           </div>
 
@@ -67,7 +69,7 @@ export function AppDashboard() {
         </div>
       </section>
 
-      <nav className="dashboard-tabs grid gap-2 rounded-3xl border border-zinc-200 bg-white p-2 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
+      <nav className="dashboard-tabs grid gap-2 rounded-3xl border border-zinc-200 bg-white p-2 shadow-sm sm:grid-cols-2 xl:grid-cols-6">
         {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
@@ -91,6 +93,7 @@ export function AppDashboard() {
         })}
       </nav>
 
+      {activeTab === 'overview' ? <SeasonOverviewDashboard onNavigate={setActiveTab} /> : null}
       {activeTab === 'matches' ? <MatchesDashboard /> : null}
       {activeTab === 'guns' ? <GunsDashboard /> : null}
       {activeTab === 'expenses' ? <ExpensesDashboard /> : null}

@@ -1,7 +1,7 @@
 # Practical Tracker Roadmap
 
 Last updated: 2026-05-29  
-Current app version: v0.6.0
+Current app version: v0.7.0
 
 ## Product direction
 
@@ -55,12 +55,12 @@ Acceptance criteria:
 
 ## Phase 3 — Season overview
 
-Status: planned
+Status: complete
 
-- [ ] Add signed-in Season Overview dashboard.
-- [ ] Show matches shot, total rounds, total spend, average percentile, current power factor, and maintenance due signals.
-- [ ] Surface recent matches and stages with video.
-- [ ] Add recommended next action cards.
+- [x] Add signed-in Season Overview dashboard.
+- [x] Show matches shot, total rounds, total spend, average percentile, current power factor, and maintenance due signals.
+- [x] Surface recent matches and stages with video.
+- [x] Add recommended next action cards.
 
 Acceptance criteria:
 
@@ -110,6 +110,6 @@ Acceptance criteria:
 
 ## Recommended next PRs
 
-1. `feat: add match history filters` — search/sort/filter the Matches workspace.
-2. `feat: add edit delete flows` — bring Expenses, Chrono, and Maintenance up to match-management quality.
-3. `feat: add season overview dashboard` — create the signed-in command-center landing view.
+1. `feat: link records to equipment` — connect matches, chrono/load records, expenses, and maintenance to gun profiles.
+2. `feat: add richer stage scoring` — capture time, points, hit factor, penalties, placement, and classifier state.
+3. `feat: add season reports` — add monthly/quarterly rollups and best/worst/top report cards.
