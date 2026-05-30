@@ -16,6 +16,7 @@ import {
 } from '@/lib/match-history.mjs'
 import { getStageReviewDetails } from '@/lib/stage-review.mjs'
 import { buildStageScoreSummary } from '@/lib/stage-scoring.mjs'
+import { DashboardBadge as Badge, DashboardField as Field, DashboardMetric as Metric, DashboardStat as Stat, DashboardStateBlock as StateBlock } from './dashboard-ui'
 
 type Gun = {
   id: string
@@ -1445,40 +1446,9 @@ function MatchDetail({
   )
 }
 
-function StateBlock({ title, detail }: { title: string; detail: string }) {
-  return (
-    <div className="px-4 py-12 text-center">
-      <p className="font-medium text-zinc-900">{title}</p>
-      <p className="mx-auto mt-1 max-w-md text-sm text-zinc-500">{detail}</p>
-    </div>
-  )
-}
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold text-zinc-950">{value}</p>
-    </div>
-  )
-}
 
-function Badge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-medium text-zinc-700">
-      {children}
-    </span>
-  )
-}
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs text-zinc-500">{label}</p>
-      <p className="font-semibold text-zinc-950">{value}</p>
-    </div>
-  )
-}
 
 function IconButton({
   label,
@@ -1502,14 +1472,5 @@ function IconButton({
     >
       {children}
     </button>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="grid gap-1.5 text-sm font-medium text-zinc-700">
-      {label}
-      {children}
-    </label>
   )
 }

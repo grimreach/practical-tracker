@@ -13,6 +13,7 @@ import {
   validateGunForm,
 } from '@/lib/gun-builds.mjs'
 import { applyDeletedRecord, applySavedRecord, hasValidationErrors } from '@/lib/edit-flows.mjs'
+import { DashboardField as Field, DashboardMetric } from './dashboard-ui'
 
 type Discipline = keyof typeof DISCIPLINES
 
@@ -256,9 +257,9 @@ export function GunsDashboard() {
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
       <section className="min-w-0 space-y-4">
         <div className="grid gap-3 sm:grid-cols-3">
-          <Metric label="Active builds" value={String(activeBuilds)} detail={`${guns.length} total profiles`} />
-          <Metric label="Inventory value" value={fmt$(totalInventoryValue)} detail="Parts entered across builds" />
-          <Metric label="Top build" value={selectedGun?.name ?? '-'} detail={selectedGun ? fmt$(calculateBuildTotal(selectedGun.buildParts)) : 'No builds yet'} />
+          <DashboardMetric variant="mini" label="Active builds" value={String(activeBuilds)} detail={`${guns.length} total profiles`} />
+          <DashboardMetric variant="mini" label="Inventory value" value={fmt$(totalInventoryValue)} detail="Parts entered across builds" />
+          <DashboardMetric variant="mini" label="Top build" value={selectedGun?.name ?? '-'} detail={selectedGun ? fmt$(calculateBuildTotal(selectedGun.buildParts)) : 'No builds yet'} />
         </div>
 
         <div className="command-panel rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
@@ -316,9 +317,9 @@ export function GunsDashboard() {
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-3">
-                      <Metric label="Build total" value={fmt$(buildTotal)} detail={`${orderedParts.length} parts`} />
-                      <Metric label="Status" value={gun.isActive ? 'Active' : 'Archived'} detail="Profile state" />
-                      <Metric label="Linked work" value="Ready" detail="Matches / chrono / maintenance" />
+                      <DashboardMetric variant="mini" label="Build total" value={fmt$(buildTotal)} detail={`${orderedParts.length} parts`} />
+                      <DashboardMetric variant="mini" label="Status" value={gun.isActive ? 'Active' : 'Archived'} detail="Profile state" />
+                      <DashboardMetric variant="mini" label="Linked work" value="Ready" detail="Matches / chrono / maintenance" />
                     </div>
 
                     <div className="overflow-hidden rounded-2xl border border-zinc-200">
@@ -422,25 +423,5 @@ export function GunsDashboard() {
         </form>
       </aside>
     </div>
-  )
-}
-
-function Metric({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return (
-    <div className="mini-stat items-start">
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <span>{detail}</span>
-    </div>
-  )
-}
-
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
-  return (
-    <label className="grid gap-1.5 text-sm font-medium text-zinc-700">
-      <span>{label}</span>
-      {children}
-      {error ? <span className="text-xs text-red-600">{error}</span> : null}
-    </label>
   )
 }

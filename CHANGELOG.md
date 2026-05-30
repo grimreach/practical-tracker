@@ -4,6 +4,14 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.14.1] - 2026-05-30
+
+### Changed
+
+- Consolidated repeated dashboard metric, badge, stat, field, and empty-state helper components into shared dashboard UI primitives.
+- Added a smoke test to keep major dashboard tabs using the shared UI primitives instead of local helper copies.
+- Bumped app version from `0.14.0` to `0.14.1`.
+
 ## [0.14.0] - 2026-05-30
 
 ### Added
