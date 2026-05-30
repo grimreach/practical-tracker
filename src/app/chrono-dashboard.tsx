@@ -1,8 +1,15 @@
 'use client'
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { Gauge, TrendingUp } from 'lucide-react'
+import { Gauge, Pencil, Trash2, TrendingUp, X } from 'lucide-react'
 import { fmtDate, pfStatus } from '@/lib/constants'
+import {
+  applyDeletedRecord,
+  applySavedRecord,
+  chronoFormFromRecord,
+  hasValidationErrors,
+  validateChronoForm,
+} from '@/lib/edit-flows.mjs'
 
 type ChronoEntry = {
   id: string
@@ -85,6 +92,9 @@ export function ChronoDashboard() {
   const [form, setForm] = useState<ChronoForm>(initialForm)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [validationErrors, setValidationErrors] = useState<Partial<Record<keyof ChronoForm, string>>>({})
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -133,8 +143,51 @@ export function ChronoDashboard() {
     setForm((current) => ({ ...current, [key]: value }))
   }
 
+  function resetForm(nextDate = form.date, nextBulletWeight = form.bulletWeight) {
+    setForm({ ...initialForm, date: nextDate, bulletWeight: nextBulletWeight })
+    setEditingId(null)
+    setValidationErrors({})
+  }
+
+  function editEntry(entry: ChronoEntry) {
+    setForm(chronoFormFromRecord(entry) as ChronoForm)
+    setEditingId(entry.id)
+    setValidationErrors({})
+    setError(null)
+    setSuccess('Editing chrono entry. Save changes or cancel to keep the original string.')
+  }
+
+  async function deleteEntry(entry: ChronoEntry) {
+    const label = entry.ammoDescription || `${entry.bulletWeight}gr load`
+    const confirmed = window.confirm(`Delete ${label}? This cannot be undone.`)
+    if (!confirmed) return
+
+    setDeletingId(entry.id)
+    setError(null)
+    setSuccess(null)
+
+    const res = await fetch(`/api/chrono/${entry.id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      setError('Could not delete chrono entry. Try again.')
+      setDeletingId(null)
+      return
+    }
+
+    setEntries((current) => applyDeletedRecord(current, entry.id) as ChronoEntry[])
+    if (editingId === entry.id) resetForm()
+    setSuccess('Chrono entry deleted.')
+    setDeletingId(null)
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const nextValidationErrors = validateChronoForm(form) as Partial<Record<keyof ChronoForm, string>>
+    setValidationErrors(nextValidationErrors)
+    if (hasValidationErrors(nextValidationErrors)) {
+      setError('Fix the highlighted chrono fields and try again.')
+      return
+    }
+
     setIsSaving(true)
     setError(null)
     setSuccess(null)
@@ -157,8 +210,8 @@ export function ChronoDashboard() {
       notes: form.notes.trim() || undefined,
     }
 
-    const res = await fetch('/api/chrono', {
-      method: 'POST',
+    const res = await fetch(editingId ? `/api/chrono/${editingId}` : '/api/chrono', {
+      method: editingId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
@@ -169,10 +222,12 @@ export function ChronoDashboard() {
       return
     }
 
-    const created = (await res.json()) as ChronoEntry
-    setEntries((current) => [created, ...current])
+    const saved = (await res.json()) as ChronoEntry
+    setEntries((current) => applySavedRecord(current, saved) as ChronoEntry[])
     setForm({ ...initialForm, date: form.date, bulletWeight: form.bulletWeight })
-    setSuccess('Chrono entry saved.')
+    setEditingId(null)
+    setValidationErrors({})
+    setSuccess(editingId ? 'Chrono entry updated.' : 'Chrono entry saved.')
     setIsSaving(false)
   }
 
@@ -247,10 +302,29 @@ export function ChronoDashboard() {
                         <Stat label="SD" value={entry.stdDev ? entry.stdDev.toString() : '-'} />
                       </div>
                     </div>
-                    <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-right">
-                      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">String</p>
-                      <p className="mt-1 text-xl font-semibold text-zinc-950">{entry.strings}</p>
-                      <p className="text-xs text-zinc-500">shots</p>
+                    <div className="flex shrink-0 flex-col gap-2 md:items-end">
+                      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-right">
+                        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">String</p>
+                        <p className="mt-1 text-xl font-semibold text-zinc-950">{entry.strings}</p>
+                        <p className="text-xs text-zinc-500">shots</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => editEntry(entry)}
+                          className="inline-flex items-center gap-1 rounded-md border border-zinc-200 px-2 py-1 text-xs font-semibold text-zinc-600 transition hover:bg-zinc-100"
+                        >
+                          <Pencil className="h-3.5 w-3.5" /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void deleteEntry(entry)}
+                          disabled={deletingId === entry.id}
+                          className="inline-flex items-center gap-1 rounded-md border border-red-100 px-2 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> {deletingId === entry.id ? 'Deleting' : 'Delete'}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -270,11 +344,27 @@ export function ChronoDashboard() {
 
       <aside className="lg:sticky lg:top-6 lg:self-start">
         <form onSubmit={handleSubmit} className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-          <div className="mb-4">
-            <h2 className="text-base font-semibold text-zinc-950">Log Chrono String</h2>
-            <p className="mt-1 text-sm text-zinc-500">
-              Enter bullet weight and average velocity; power factor is calculated on save.
-            </p>
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-zinc-950">
+                {editingId ? 'Edit Chrono String' : 'Log Chrono String'}
+              </h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                {editingId
+                  ? 'Update this string and save, or cancel to keep the original load data.'
+                  : 'Enter bullet weight and average velocity; power factor is calculated on save.'}
+              </p>
+            </div>
+            {editingId ? (
+              <button
+                type="button"
+                onClick={() => resetForm()}
+                className="rounded-full border border-zinc-200 p-2 text-zinc-500 transition hover:bg-zinc-100"
+                aria-label="Cancel chrono edit"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : null}
           </div>
 
           <div className="mb-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
@@ -293,14 +383,14 @@ export function ChronoDashboard() {
           </div>
 
           <div className="grid gap-3">
-            <Field label="Date">
+            <Field label="Date" error={validationErrors.date}>
               <input required type="date" value={form.date} onChange={(event) => updateField('date', event.target.value)} className="input" />
             </Field>
             <Field label="Ammo description">
               <input value={form.ammoDescription} onChange={(event) => updateField('ammoDescription', event.target.value)} className="input" placeholder="124gr coated match load" />
             </Field>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Bullet weight">
+              <Field label="Bullet weight" error={validationErrors.bulletWeight}>
                 <input required min="1" step="0.1" type="number" value={form.bulletWeight} onChange={(event) => updateField('bulletWeight', event.target.value)} className="input" placeholder="124" />
               </Field>
               <Field label="Bullet type">
@@ -316,10 +406,10 @@ export function ChronoDashboard() {
               </Field>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Avg velocity">
+              <Field label="Avg velocity" error={validationErrors.avgVelocity}>
                 <input required min="1" step="0.1" type="number" value={form.avgVelocity} onChange={(event) => updateField('avgVelocity', event.target.value)} className="input" placeholder="1075" />
               </Field>
-              <Field label="Shots">
+              <Field label="Shots" error={validationErrors.strings}>
                 <input min="1" type="number" value={form.strings} onChange={(event) => updateField('strings', event.target.value)} className="input" placeholder="10" />
               </Field>
             </div>
@@ -353,7 +443,7 @@ export function ChronoDashboard() {
           </div>
 
           <button disabled={isSaving} className="mt-4 w-full rounded-md bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400">
-            {isSaving ? 'Saving...' : 'Save Chrono Entry'}
+            {isSaving ? 'Saving...' : editingId ? 'Save Chrono Changes' : 'Save Chrono Entry'}
           </button>
         </form>
       </aside>
@@ -383,11 +473,12 @@ function Stat({ label, value }: { label: string; value: string }) {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
   return (
     <label className="grid gap-1.5 text-sm font-medium text-zinc-700">
       {label}
       {children}
+      {error ? <span className="text-xs font-medium text-red-700">{error}</span> : null}
     </label>
   )
 }

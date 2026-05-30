@@ -1,8 +1,15 @@
 'use client'
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, ShieldAlert, Wrench } from 'lucide-react'
+import { CheckCircle2, Pencil, ShieldAlert, Trash2, Wrench, X } from 'lucide-react'
 import { fmtDate } from '@/lib/constants'
+import {
+  applyDeletedRecord,
+  applySavedRecord,
+  hasValidationErrors,
+  maintenanceFormFromRecord,
+  validateMaintenanceForm,
+} from '@/lib/edit-flows.mjs'
 
 type MaintenanceLog = {
   id: string
@@ -66,6 +73,9 @@ export function MaintenanceDashboard() {
   const [form, setForm] = useState<MaintenanceForm>(initialForm)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [validationErrors, setValidationErrors] = useState<Partial<Record<keyof MaintenanceForm, string>>>({})
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -111,8 +121,55 @@ export function MaintenanceDashboard() {
     setForm((current) => ({ ...current, [key]: value }))
   }
 
+  function resetForm() {
+    setForm({
+      ...initialForm,
+      date: form.date,
+      lifetimeRounds: form.lifetimeRounds,
+      totalRoundsSinceClean: form.totalRoundsSinceClean,
+    })
+    setEditingId(null)
+    setValidationErrors({})
+  }
+
+  function editLog(log: MaintenanceLog) {
+    setForm(maintenanceFormFromRecord(log) as MaintenanceForm)
+    setEditingId(log.id)
+    setValidationErrors({})
+    setError(null)
+    setSuccess('Editing maintenance log. Save changes or cancel to keep the original record.')
+  }
+
+  async function deleteLog(log: MaintenanceLog) {
+    const confirmed = window.confirm(`Delete maintenance log: ${log.action}? This cannot be undone.`)
+    if (!confirmed) return
+
+    setDeletingId(log.id)
+    setError(null)
+    setSuccess(null)
+
+    const res = await fetch(`/api/maintenance/${log.id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      setError('Could not delete maintenance log. Try again.')
+      setDeletingId(null)
+      return
+    }
+
+    setLogs((current) => applyDeletedRecord(current, log.id) as MaintenanceLog[])
+    if (editingId === log.id) resetForm()
+    setSuccess('Maintenance log deleted.')
+    setDeletingId(null)
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const nextValidationErrors = validateMaintenanceForm(form) as Partial<Record<keyof MaintenanceForm, string>>
+    setValidationErrors(nextValidationErrors)
+    if (hasValidationErrors(nextValidationErrors)) {
+      setError('Fix the highlighted maintenance fields and try again.')
+      return
+    }
+
     setIsSaving(true)
     setError(null)
     setSuccess(null)
@@ -129,8 +186,8 @@ export function MaintenanceDashboard() {
       notes: form.notes.trim() || undefined,
     }
 
-    const res = await fetch('/api/maintenance', {
-      method: 'POST',
+    const res = await fetch(editingId ? `/api/maintenance/${editingId}` : '/api/maintenance', {
+      method: editingId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
@@ -141,15 +198,17 @@ export function MaintenanceDashboard() {
       return
     }
 
-    const created = (await res.json()) as MaintenanceLog
-    setLogs((current) => [created, ...current])
+    const saved = (await res.json()) as MaintenanceLog
+    setLogs((current) => applySavedRecord(current, saved) as MaintenanceLog[])
     setForm({
       ...initialForm,
       date: form.date,
       lifetimeRounds: String(payload.lifetimeRounds),
       totalRoundsSinceClean: String(payload.totalRoundsSinceClean),
     })
-    setSuccess('Maintenance log saved.')
+    setEditingId(null)
+    setValidationErrors({})
+    setSuccess(editingId ? 'Maintenance log updated.' : 'Maintenance log saved.')
     setIsSaving(false)
   }
 
@@ -219,9 +278,28 @@ export function MaintenanceDashboard() {
                         <Stat label="Lubricant" value={log.lubricants || '-'} />
                       </div>
                     </div>
-                    <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-right">
-                      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Care</p>
-                      <Wrench className="ml-auto mt-1 h-6 w-6 text-zinc-500" />
+                    <div className="flex shrink-0 flex-col gap-2 md:items-end">
+                      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-right">
+                        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Care</p>
+                        <Wrench className="ml-auto mt-1 h-6 w-6 text-zinc-500" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => editLog(log)}
+                          className="inline-flex items-center gap-1 rounded-md border border-zinc-200 px-2 py-1 text-xs font-semibold text-zinc-600 transition hover:bg-zinc-100"
+                        >
+                          <Pencil className="h-3.5 w-3.5" /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void deleteLog(log)}
+                          disabled={deletingId === log.id}
+                          className="inline-flex items-center gap-1 rounded-md border border-red-100 px-2 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> {deletingId === log.id ? 'Deleting' : 'Delete'}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -241,11 +319,27 @@ export function MaintenanceDashboard() {
 
       <aside className="lg:sticky lg:top-6 lg:self-start">
         <form onSubmit={handleSubmit} className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-          <div className="mb-4">
-            <h2 className="text-base font-semibold text-zinc-950">Log Maintenance</h2>
-            <p className="mt-1 text-sm text-zinc-500">
-              Record the action, round counts, inspected parts, and replacements.
-            </p>
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-zinc-950">
+                {editingId ? 'Edit Maintenance' : 'Log Maintenance'}
+              </h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                {editingId
+                  ? 'Update the service record and save, or cancel to keep the original log.'
+                  : 'Record the action, round counts, inspected parts, and replacements.'}
+              </p>
+            </div>
+            {editingId ? (
+              <button
+                type="button"
+                onClick={() => resetForm()}
+                className="rounded-full border border-zinc-200 p-2 text-zinc-500 transition hover:bg-zinc-100"
+                aria-label="Cancel maintenance edit"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : null}
           </div>
 
           <div className="mb-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
@@ -257,24 +351,24 @@ export function MaintenanceDashboard() {
           </div>
 
           <div className="grid gap-3">
-            <Field label="Date">
+            <Field label="Date" error={validationErrors.date}>
               <input required type="date" value={form.date} onChange={(event) => updateField('date', event.target.value)} className="input" />
             </Field>
-            <Field label="Action">
+            <Field label="Action" error={validationErrors.action}>
               <input required list="maintenance-actions" value={form.action} onChange={(event) => updateField('action', event.target.value)} className="input" placeholder="Cleaned and lubricated" />
               <datalist id="maintenance-actions">
                 {actionPresets.map((preset) => <option key={preset} value={preset} />)}
               </datalist>
             </Field>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Rounds fired">
+              <Field label="Rounds fired" error={validationErrors.roundsFired}>
                 <input min="0" type="number" value={form.roundsFired} onChange={(event) => updateField('roundsFired', event.target.value)} className="input" placeholder="142" />
               </Field>
-              <Field label="Since clean">
+              <Field label="Since clean" error={validationErrors.totalRoundsSinceClean}>
                 <input min="0" type="number" value={form.totalRoundsSinceClean} onChange={(event) => updateField('totalRoundsSinceClean', event.target.value)} className="input" placeholder="650" />
               </Field>
             </div>
-            <Field label="Lifetime rounds">
+            <Field label="Lifetime rounds" error={validationErrors.lifetimeRounds}>
               <input min="0" type="number" value={form.lifetimeRounds} onChange={(event) => updateField('lifetimeRounds', event.target.value)} className="input" placeholder="5480" />
             </Field>
             <Field label="Parts inspected">
@@ -292,7 +386,7 @@ export function MaintenanceDashboard() {
           </div>
 
           <button disabled={isSaving} className="mt-4 w-full rounded-md bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400">
-            {isSaving ? 'Saving...' : 'Save Maintenance Log'}
+            {isSaving ? 'Saving...' : editingId ? 'Save Maintenance Changes' : 'Save Maintenance Log'}
           </button>
         </form>
       </aside>
@@ -322,11 +416,12 @@ function Stat({ label, value }: { label: string; value: string }) {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
   return (
     <label className="grid gap-1.5 text-sm font-medium text-zinc-700">
       {label}
       {children}
+      {error ? <span className="text-xs font-medium text-red-700">{error}</span> : null}
     </label>
   )
 }

@@ -4,6 +4,34 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.6.0] - 2026-05-29
+
+### Added
+
+- Added a Gun Builds workspace for firearm/equipment profiles, build photos, active/archive state, build notes, and discipline tags.
+- Added build parts lists with component type, brand/model, notes/source, per-part retail price, and calculated build totals.
+- Added a 9mm PCC template based on the uploaded workbook so the existing parts sheet can seed a new build without duplicating other workspaces.
+- Added authenticated create/update/delete API routes for gun builds and nested build parts.
+- Added framework-free tests for gun build form conversion, validation, part ordering, and total calculation.
+
+### Changed
+
+- Bumped app version from `0.5.0` to `0.6.0`.
+
+## [0.5.0] - 2026-05-29
+
+### Added
+
+- Added edit and delete flows for expenses, chrono entries, and maintenance logs.
+- Added confirmation prompts before destructive deletes across Phase 2 workspaces.
+- Added field-level validation messages for editable expense, chrono, and maintenance forms.
+- Added API update/delete routes for expense, chrono, and maintenance records.
+- Added framework-free tests for editable form state, validation, save replacement, and delete list behavior.
+
+### Changed
+
+- Bumped app version from `0.4.2` to `0.5.0`.
+
 ## [0.4.2] - 2026-05-29
 
 ### Fixed

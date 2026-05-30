@@ -1,8 +1,15 @@
 'use client'
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { ExternalLink, Filter, ReceiptText, Search, WalletCards } from 'lucide-react'
+import { ExternalLink, Filter, Pencil, ReceiptText, Search, Trash2, WalletCards, X } from 'lucide-react'
 import { EXPENSE_CATEGORIES, fmt$, fmtDate } from '@/lib/constants'
+import {
+  applyDeletedRecord,
+  applySavedRecord,
+  expenseFormFromRecord,
+  hasValidationErrors,
+  validateExpenseForm,
+} from '@/lib/edit-flows.mjs'
 
 type Expense = {
   id: string
@@ -60,6 +67,9 @@ export function ExpensesDashboard() {
   const [categoryFilter, setCategoryFilter] = useState<ExpenseCategory | 'ALL'>('ALL')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [validationErrors, setValidationErrors] = useState<Partial<Record<keyof ExpenseForm, string>>>({})
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -151,8 +161,50 @@ export function ExpensesDashboard() {
     setForm((current) => ({ ...current, [key]: value }))
   }
 
+  function resetForm(nextDate = form.date) {
+    setForm({ ...initialForm, date: nextDate })
+    setEditingId(null)
+    setValidationErrors({})
+  }
+
+  function editExpense(expense: Expense) {
+    setForm(expenseFormFromRecord(expense) as ExpenseForm)
+    setEditingId(expense.id)
+    setValidationErrors({})
+    setError(null)
+    setSuccess('Editing expense. Save changes or cancel to keep the original record.')
+  }
+
+  async function deleteExpense(expense: Expense) {
+    const confirmed = window.confirm(`Delete ${expense.item}? This cannot be undone.`)
+    if (!confirmed) return
+
+    setDeletingId(expense.id)
+    setError(null)
+    setSuccess(null)
+
+    const res = await fetch(`/api/expenses/${expense.id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      setError('Could not delete expense. Try again.')
+      setDeletingId(null)
+      return
+    }
+
+    setExpenses((current) => applyDeletedRecord(current, expense.id) as Expense[])
+    if (editingId === expense.id) resetForm()
+    setSuccess('Expense deleted.')
+    setDeletingId(null)
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const nextValidationErrors = validateExpenseForm(form) as Partial<Record<keyof ExpenseForm, string>>
+    setValidationErrors(nextValidationErrors)
+    if (hasValidationErrors(nextValidationErrors)) {
+      setError('Fix the highlighted expense fields and try again.')
+      return
+    }
+
     setIsSaving(true)
     setError(null)
     setSuccess(null)
@@ -167,8 +219,8 @@ export function ExpensesDashboard() {
       notes: form.notes.trim() || undefined,
     }
 
-    const res = await fetch('/api/expenses', {
-      method: 'POST',
+    const res = await fetch(editingId ? `/api/expenses/${editingId}` : '/api/expenses', {
+      method: editingId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
@@ -179,10 +231,12 @@ export function ExpensesDashboard() {
       return
     }
 
-    const created = (await res.json()) as Expense
-    setExpenses((current) => [created, ...current])
+    const saved = (await res.json()) as Expense
+    setExpenses((current) => applySavedRecord(current, saved) as Expense[])
     setForm({ ...initialForm, date: form.date })
-    setSuccess('Expense saved.')
+    setEditingId(null)
+    setValidationErrors({})
+    setSuccess(editingId ? 'Expense updated.' : 'Expense saved.')
     setIsSaving(false)
   }
 
@@ -315,9 +369,28 @@ export function ExpensesDashboard() {
                           <p className="mt-3 max-w-2xl text-sm text-zinc-600">{expense.notes}</p>
                         ) : null}
                       </div>
-                      <p className="shrink-0 text-lg font-semibold text-zinc-950">
-                        {fmt$(expense.amount)}
-                      </p>
+                      <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+                        <p className="text-lg font-semibold text-zinc-950">
+                          {fmt$(expense.amount)}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => editExpense(expense)}
+                            className="inline-flex items-center gap-1 rounded-md border border-zinc-200 px-2 py-1 text-xs font-semibold text-zinc-600 transition hover:bg-zinc-100"
+                          >
+                            <Pencil className="h-3.5 w-3.5" /> Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void deleteExpense(expense)}
+                            disabled={deletingId === expense.id}
+                            className="inline-flex items-center gap-1 rounded-md border border-red-100 px-2 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> {deletingId === expense.id ? 'Deleting' : 'Delete'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </article>
                 ))}
@@ -403,16 +476,34 @@ export function ExpensesDashboard() {
           onSubmit={handleSubmit}
           className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
         >
-          <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Quick capture</p>
-            <h2 className="mt-1 text-lg font-semibold text-zinc-950">Log an Expense</h2>
-            <p className="mt-1 text-sm text-zinc-500">
-              Keep match, ammo, parts, and travel spend in one place.
-            </p>
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                {editingId ? 'Correction mode' : 'Quick capture'}
+              </p>
+              <h2 className="mt-1 text-lg font-semibold text-zinc-950">
+                {editingId ? 'Edit Expense' : 'Log an Expense'}
+              </h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                {editingId
+                  ? 'Update the fields and save, or cancel to leave the expense unchanged.'
+                  : 'Keep match, ammo, parts, and travel spend in one place.'}
+              </p>
+            </div>
+            {editingId ? (
+              <button
+                type="button"
+                onClick={() => resetForm()}
+                className="rounded-full border border-zinc-200 p-2 text-zinc-500 transition hover:bg-zinc-100"
+                aria-label="Cancel expense edit"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : null}
           </div>
 
           <div className="grid gap-3">
-            <Field label="Date">
+            <Field label="Date" error={validationErrors.date}>
               <input
                 required
                 type="date"
@@ -438,7 +529,7 @@ export function ExpensesDashboard() {
               </select>
             </Field>
 
-            <Field label="Item">
+            <Field label="Item" error={validationErrors.item}>
               <input
                 required
                 value={form.item}
@@ -448,7 +539,7 @@ export function ExpensesDashboard() {
               />
             </Field>
 
-            <Field label="Amount">
+            <Field label="Amount" error={validationErrors.amount}>
               <input
                 required
                 min="0.01"
@@ -470,7 +561,7 @@ export function ExpensesDashboard() {
               />
             </Field>
 
-            <Field label="Receipt URL">
+            <Field label="Receipt URL" error={validationErrors.url}>
               <input
                 type="url"
                 value={form.url}
@@ -495,7 +586,7 @@ export function ExpensesDashboard() {
             disabled={isSaving}
             className="mt-4 w-full rounded-md bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400"
           >
-            {isSaving ? 'Saving...' : 'Save Expense'}
+            {isSaving ? 'Saving...' : editingId ? 'Save Expense Changes' : 'Save Expense'}
           </button>
         </form>
       </aside>
@@ -521,11 +612,12 @@ function Badge({ children }: { children: React.ReactNode }) {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
   return (
     <label className="grid gap-1.5 text-sm font-medium text-zinc-700">
       {label}
       {children}
+      {error ? <span className="text-xs font-medium text-red-700">{error}</span> : null}
     </label>
   )
 }
