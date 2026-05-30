@@ -10,7 +10,8 @@ import {
   hasValidationErrors,
   validateChronoForm,
 } from '@/lib/edit-flows.mjs'
-import { DashboardBadge as Badge, DashboardField as Field, DashboardMetric as Metric, DashboardStat as Stat } from './dashboard-ui'
+import { dashboardRelationshipLabels } from '@/lib/dashboard-relationships.mjs'
+import { DashboardBadge as Badge, DashboardField as Field, DashboardMetric as Metric, DashboardRelationshipLabels as RelationshipLabels, DashboardStat as Stat } from './dashboard-ui'
 
 type Gun = {
   id: string
@@ -327,13 +328,7 @@ export function ChronoDashboard() {
                         {entry.powder ? ` · ${entry.powder}` : ''}
                         {entry.powderCharge ? ` ${entry.powderCharge}gr` : ''}
                       </p>
-                      {entry.gun || entry.match ? (
-                        <p className="mt-1 text-xs font-medium text-zinc-500">
-                          {[entry.gun?.name, entry.match ? entry.match.matchName || entry.match.club : null]
-                            .filter(Boolean)
-                            .join(' · ')}
-                        </p>
-                      ) : null}
+                      <RelationshipLabels labels={dashboardRelationshipLabels({ gun: entry.gun, match: entry.match })} />
                       <div className="mt-3 grid gap-2 text-sm text-zinc-600 sm:grid-cols-2 lg:grid-cols-4">
                         <Stat label="Avg" value={`${Math.round(entry.avgVelocity)} fps`} />
                         <Stat label="PF" value={entry.powerFactor.toString()} />
