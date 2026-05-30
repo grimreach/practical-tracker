@@ -2,47 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import type { Discipline } from '@/generated/prisma/client'
-import { z } from 'zod'
-
-const youtubeUrlSchema = z.url().refine((value) => {
-  const url = new URL(value)
-  const host = url.hostname.replace(/^www\./, '')
-  const isWebUrl = url.protocol === 'https:' || url.protocol === 'http:'
-  return isWebUrl && (host === 'youtube.com' || host === 'youtu.be' || host.endsWith('.youtube.com'))
-}, 'Must be a YouTube URL')
-
-const stageSchema = z.object({
-  stageNum:  z.number().int().min(1),
-  stageName: z.string().optional(),
-  score:     z.number().default(0),
-  time:      z.number().optional(),
-  hits:      z.number().int().optional(),
-  misses:    z.number().int().default(0),
-  penalties: z.number().int().default(0),
-  dnf:       z.boolean().default(false),
-  youtubeUrl: youtubeUrlSchema.optional(),
-  notes:     z.string().optional(),
-})
-
-const matchSchema = z.object({
-  date:             z.string(),
-  club:             z.string().min(1),
-  matchName:        z.string().optional(),
-  discipline:       z.enum(['USPSA','SCSA','IPSC','IDPA','THREE_GUN','PRS','NRL22','RIMFIRE','OTHER']),
-  division:         z.string().optional(),
-  tier:             z.enum(['LOCAL','TIER1','TIER2','TIER3','MAJOR']).default('LOCAL'),
-  placement:        z.number().int().positive().optional(),
-  totalCompetitors: z.number().int().positive().optional(),
-  roundsUsed:       z.number().int().min(0).default(0),
-  ammoCostPerRound: z.number().min(0).default(0),
-  powerFactor:      z.number().int().optional(),
-  pfType:           z.string().optional(),
-  gunId:            z.string().optional(),
-  dq:               z.boolean().default(false),
-  dqReason:         z.string().optional(),
-  notes:            z.string().optional(),
-  stages:           z.array(stageSchema).default([]),
-})
+import { calcPercentile, matchSchema } from '@/lib/match-schema'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -74,9 +34,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
   const d = parsed.data
-  const percentile = d.placement && d.totalCompetitors
-    ? Math.round((1 - d.placement / d.totalCompetitors) * 100)
-    : null
+  const percentile = calcPercentile(d.placement, d.totalCompetitors)
 
   const match = await prisma.match.create({
     data: {
@@ -100,7 +58,7 @@ export async function POST(req: NextRequest) {
       notes:            d.notes,
       stages: { create: d.stages },
     },
-    include: { stages: true },
+    include: { stages: { orderBy: { stageNum: 'asc' } } },
   })
 
   return NextResponse.json(match, { status: 201 })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { calcPercentile, matchSchema } from '@/lib/match-schema'
 
 async function getMatch(id: string, userId: string) {
   return prisma.match.findFirst({ where: { id, userId }, include: { stages: { orderBy: { stageNum: 'asc' } }, gun: true } })
@@ -23,35 +24,38 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const body = await req.json()
-  const percentile = body.placement && body.totalCompetitors
-    ? Math.round((1 - body.placement / body.totalCompetitors) * 100)
-    : null
+  const parsed = matchSchema.safeParse(body)
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  // Delete old stages and recreate
-  await prisma.stageScore.deleteMany({ where: { matchId: id } })
+  const d = parsed.data
+  const percentile = calcPercentile(d.placement, d.totalCompetitors)
 
-  const match = await prisma.match.update({
-    where: { id },
-    data: {
-      date:             body.date ? new Date(body.date) : undefined,
-      club:             body.club,
-      matchName:        body.matchName,
-      discipline:       body.discipline,
-      division:         body.division,
-      tier:             body.tier,
-      placement:        body.placement,
-      totalCompetitors: body.totalCompetitors,
-      percentile,
-      roundsUsed:       body.roundsUsed,
-      ammoCostPerRound: body.ammoCostPerRound,
-      powerFactor:      body.powerFactor,
-      pfType:           body.pfType,
-      dq:               body.dq,
-      dqReason:         body.dqReason,
-      notes:            body.notes,
-      stages: { create: body.stages || [] },
-    },
-    include: { stages: true },
+  const match = await prisma.$transaction(async (tx) => {
+    await tx.stageScore.deleteMany({ where: { matchId: id } })
+
+    return tx.match.update({
+      where: { id },
+      data: {
+        date:             new Date(d.date),
+        club:             d.club,
+        matchName:        d.matchName,
+        discipline:       d.discipline,
+        division:         d.division,
+        tier:             d.tier,
+        placement:        d.placement,
+        totalCompetitors: d.totalCompetitors,
+        percentile,
+        roundsUsed:       d.roundsUsed,
+        ammoCostPerRound: d.ammoCostPerRound,
+        powerFactor:      d.powerFactor,
+        pfType:           d.pfType,
+        dq:               d.dq,
+        dqReason:         d.dqReason,
+        notes:            d.notes,
+        stages: { create: d.stages },
+      },
+      include: { stages: { orderBy: { stageNum: 'asc' } } },
+    })
   })
   return NextResponse.json(match)
 }

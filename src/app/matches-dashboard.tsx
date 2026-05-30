@@ -1,7 +1,7 @@
 'use client'
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { ExternalLink, Plus, Trash2 } from 'lucide-react'
+import { Edit3, ExternalLink, Plus, Trash2, X } from 'lucide-react'
 import {
   DISCIPLINES,
   DIVISIONS,
@@ -35,6 +35,7 @@ type Stage = {
   stageNum: number
   stageName: string | null
   youtubeUrl: string | null
+  notes: string | null
 }
 
 type FormState = {
@@ -57,6 +58,7 @@ type StageForm = {
   stageNum: string
   stageName: string
   youtubeUrl: string
+  notes: string
 }
 
 const today = new Date().toISOString().slice(0, 10)
@@ -77,6 +79,14 @@ const initialForm: FormState = {
   notes: '',
 }
 
+function dateForInput(value: string) {
+  return new Date(value).toISOString().slice(0, 10)
+}
+
+function numberToInput(value: number | null) {
+  return value === null ? '' : String(value)
+}
+
 function toOptionalNumber(value: string) {
   return value.trim() === '' ? undefined : Number(value)
 }
@@ -94,12 +104,41 @@ function isYouTubeUrl(value: string) {
   }
 }
 
+function formFromMatch(match: Match): FormState {
+  return {
+    date: dateForInput(match.date),
+    club: match.club,
+    matchName: match.matchName ?? '',
+    discipline: match.discipline,
+    division: match.division ?? DIVISIONS[match.discipline]?.[0] ?? '',
+    tier: match.tier,
+    placement: numberToInput(match.placement),
+    totalCompetitors: numberToInput(match.totalCompetitors),
+    roundsUsed: String(match.roundsUsed),
+    ammoCostPerRound: String(match.ammoCostPerRound),
+    powerFactor: numberToInput(match.powerFactor),
+    pfType: match.pfType ?? '',
+    notes: match.notes ?? '',
+  }
+}
+
+function stageRowsFromMatch(match: Match): StageForm[] {
+  return match.stages.map((stage) => ({
+    stageNum: String(stage.stageNum),
+    stageName: stage.stageName ?? '',
+    youtubeUrl: stage.youtubeUrl ?? '',
+    notes: stage.notes ?? '',
+  }))
+}
+
 export function MatchesDashboard() {
   const [matches, setMatches] = useState<Match[]>([])
   const [form, setForm] = useState<FormState>(initialForm)
   const [stageRows, setStageRows] = useState<StageForm[]>([])
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const divisions = useMemo(() => DIVISIONS[form.discipline] ?? [], [form.discipline])
@@ -151,6 +190,39 @@ export function MatchesDashboard() {
     })
   }
 
+  function resetForm() {
+    setForm(initialForm)
+    setStageRows([])
+    setEditingId(null)
+    setError(null)
+  }
+
+  function editMatch(match: Match) {
+    setForm(formFromMatch(match))
+    setStageRows(stageRowsFromMatch(match))
+    setEditingId(match.id)
+    setError(null)
+  }
+
+  async function deleteMatch(match: Match) {
+    const label = match.matchName || match.club
+    if (!window.confirm(`Delete ${label}?`)) return
+
+    setDeletingId(match.id)
+    setError(null)
+
+    const res = await fetch(`/api/matches/${match.id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      setError('Could not delete match.')
+      setDeletingId(null)
+      return
+    }
+
+    setMatches((current) => current.filter((item) => item.id !== match.id))
+    if (editingId === match.id) resetForm()
+    setDeletingId(null)
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsSaving(true)
@@ -177,16 +249,17 @@ export function MatchesDashboard() {
       pfType: form.pfType || undefined,
       notes: form.notes.trim() || undefined,
       stages: stageRows
-        .filter((stage) => stage.stageName.trim() || stage.youtubeUrl.trim())
+        .filter((stage) => stage.stageName.trim() || stage.youtubeUrl.trim() || stage.notes.trim())
         .map((stage, index) => ({
           stageNum: toOptionalNumber(stage.stageNum) ?? index + 1,
           stageName: stage.stageName.trim() || undefined,
           youtubeUrl: stage.youtubeUrl.trim() || undefined,
+          notes: stage.notes.trim() || undefined,
         })),
     }
 
-    const res = await fetch('/api/matches', {
-      method: 'POST',
+    const res = await fetch(editingId ? `/api/matches/${editingId}` : '/api/matches', {
+      method: editingId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
@@ -197,17 +270,22 @@ export function MatchesDashboard() {
       return
     }
 
-    const created = (await res.json()) as Match
-    setMatches((current) => [created, ...current])
+    const saved = (await res.json()) as Match
+    setMatches((current) =>
+      editingId
+        ? current.map((match) => (match.id === saved.id ? saved : match))
+        : [saved, ...current],
+    )
     setForm({ ...initialForm, date: form.date })
     setStageRows([])
+    setEditingId(null)
     setIsSaving(false)
   }
 
   function addStageRow() {
     setStageRows((current) => [
       ...current,
-      { stageNum: String(current.length + 1), stageName: '', youtubeUrl: '' },
+      { stageNum: String(current.length + 1), stageName: '', youtubeUrl: '', notes: '' },
     ])
   }
 
@@ -228,7 +306,7 @@ export function MatchesDashboard() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_430px]">
       <section className="min-w-0">
         <div className="mb-4 grid gap-3 sm:grid-cols-3">
           <Metric label="Matches" value={matchCount.toString()} />
@@ -287,7 +365,7 @@ export function MatchesDashboard() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-right md:min-w-72">
+                    <div className="grid grid-cols-[repeat(3,minmax(0,1fr))_auto] gap-2 text-right md:min-w-80">
                       <Stat
                         label="Place"
                         value={
@@ -301,6 +379,18 @@ export function MatchesDashboard() {
                         value={match.percentile === null ? '-' : `${match.percentile}%`}
                       />
                       <Stat label="Rounds" value={match.roundsUsed.toLocaleString()} />
+                      <div className="flex justify-end gap-1">
+                        <IconButton label="Edit match" onClick={() => editMatch(match)}>
+                          <Edit3 className="h-4 w-4" />
+                        </IconButton>
+                        <IconButton
+                          label="Delete match"
+                          onClick={() => void deleteMatch(match)}
+                          disabled={deletingId === match.id}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </IconButton>
+                      </div>
                     </div>
                   </div>
 
@@ -317,29 +407,39 @@ export function MatchesDashboard() {
                     </div>
                   ) : null}
 
-                  {match.stages.some((stage) => stage.youtubeUrl) ? (
+                  {match.stages.length > 0 ? (
                     <div className="mt-4 rounded-md border border-zinc-200 bg-zinc-50 p-3">
                       <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
                         Stage review
                       </h4>
                       <div className="mt-2 grid gap-2">
-                        {match.stages
-                          .filter((stage) => stage.youtubeUrl)
-                          .map((stage) => (
-                            <a
-                              key={stage.id}
-                              href={stage.youtubeUrl ?? '#'}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex items-center justify-between gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:border-zinc-300 hover:bg-zinc-100"
-                            >
-                              <span className="min-w-0 truncate">
+                        {match.stages.map((stage) => (
+                          <div
+                            key={stage.id}
+                            className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="min-w-0 truncate font-medium text-zinc-800">
                                 Stage {stage.stageNum}
                                 {stage.stageName ? ` · ${stage.stageName}` : ''}
                               </span>
-                              <ExternalLink className="h-4 w-4 shrink-0 text-zinc-500" />
-                            </a>
-                          ))}
+                              {stage.youtubeUrl ? (
+                                <a
+                                  href={stage.youtubeUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-700 hover:text-zinc-950"
+                                >
+                                  Video
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                </a>
+                              ) : null}
+                            </div>
+                            {stage.notes ? (
+                              <p className="mt-1 text-zinc-600">{stage.notes}</p>
+                            ) : null}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ) : null}
@@ -355,11 +455,26 @@ export function MatchesDashboard() {
           onSubmit={handleSubmit}
           className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm"
         >
-          <div className="mb-4">
-            <h2 className="text-base font-semibold text-zinc-950">Log a Match</h2>
-            <p className="mt-1 text-sm text-zinc-500">
-              Record the basics now; stages can come next.
-            </p>
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-zinc-950">
+                {editingId ? 'Edit Match' : 'Log a Match'}
+              </h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                Capture results, round count, and stage review notes.
+              </p>
+            </div>
+            {editingId ? (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 hover:bg-zinc-100"
+                aria-label="Cancel edit"
+                title="Cancel edit"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : null}
           </div>
 
           <div className="grid gap-3">
@@ -524,9 +639,7 @@ export function MatchesDashboard() {
 
             <section className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h3 className="text-sm font-semibold text-zinc-900">Stage review</h3>
-                </div>
+                <h3 className="text-sm font-semibold text-zinc-900">Stage review</h3>
                 <button
                   type="button"
                   onClick={addStageRow}
@@ -544,7 +657,7 @@ export function MatchesDashboard() {
                   onClick={addStageRow}
                   className="mt-3 w-full rounded-md border border-dashed border-zinc-300 px-3 py-3 text-sm font-medium text-zinc-600 hover:border-zinc-400 hover:bg-white"
                 >
-                  Add a stage video
+                  Add stage review
                 </button>
               ) : (
                 <div className="mt-3 grid gap-3">
@@ -602,6 +715,17 @@ export function MatchesDashboard() {
                           placeholder="https://youtu.be/..."
                         />
                       </label>
+
+                      <label className="grid gap-1 text-xs font-medium text-zinc-600">
+                        Review notes
+                        <textarea
+                          rows={2}
+                          value={stage.notes}
+                          onChange={(event) => updateStageRow(index, 'notes', event.target.value)}
+                          className="input resize-none"
+                          placeholder="Entry plan, mistake, fix for next time."
+                        />
+                      </label>
                     </div>
                   ))}
                 </div>
@@ -613,7 +737,7 @@ export function MatchesDashboard() {
             disabled={isSaving}
             className="mt-4 w-full rounded-md bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400"
           >
-            {isSaving ? 'Saving...' : 'Save Match'}
+            {isSaving ? 'Saving...' : editingId ? 'Save Changes' : 'Save Match'}
           </button>
         </form>
       </aside>
@@ -644,6 +768,31 @@ function Stat({ label, value }: { label: string; value: string }) {
       <p className="text-xs text-zinc-500">{label}</p>
       <p className="font-semibold text-zinc-950">{value}</p>
     </div>
+  )
+}
+
+function IconButton({
+  label,
+  children,
+  disabled,
+  onClick,
+}: {
+  label: string
+  children: React.ReactNode
+  disabled?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+      aria-label={label}
+      title={label}
+    >
+      {children}
+    </button>
   )
 }
 

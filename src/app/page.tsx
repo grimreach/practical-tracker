@@ -1,5 +1,5 @@
 import { auth, signIn, signOut } from '@/auth'
-import { MatchesDashboard } from './matches-dashboard'
+import { AppDashboard } from './app-dashboard'
 
 export default async function Home() {
   const session = await auth()
@@ -28,7 +28,7 @@ export default async function Home() {
             </form>
           </header>
 
-          <MatchesDashboard />
+          <AppDashboard />
         </div>
       ) : (
         <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-8 text-center">
