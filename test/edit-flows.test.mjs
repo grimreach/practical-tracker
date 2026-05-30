@@ -59,6 +59,8 @@ test('converts existing records into editable form state', () => {
   assert.deepEqual(expenseFormFromRecord(expense), {
     date: '2026-05-30',
     category: 'AMMO',
+    gunId: '',
+    matchId: '',
     item: 'Match ammo',
     amount: '42.5',
     vendor: 'Range shop',
@@ -67,6 +69,8 @@ test('converts existing records into editable form state', () => {
   })
 
   assert.equal(chronoFormFromRecord(chrono).date, '2026-05-29')
+  assert.equal(chronoFormFromRecord(chrono).gunId, '')
+  assert.equal(chronoFormFromRecord(chrono).matchId, '')
   assert.equal(chronoFormFromRecord(chrono).powderCharge, '3.8')
   assert.equal(chronoFormFromRecord(chrono).primer, '')
 

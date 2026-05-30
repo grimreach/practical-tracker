@@ -17,8 +17,17 @@ import {
 import { getStageReviewDetails } from '@/lib/stage-review.mjs'
 import { buildStageScoreSummary } from '@/lib/stage-scoring.mjs'
 
+type Gun = {
+  id: string
+  name: string
+  caliber: string
+  isActive: boolean
+}
+
 type Match = {
   id: string
+  gunId: string | null
+  gun: Gun | null
   date: string
   club: string
   matchName: string | null
@@ -58,6 +67,7 @@ type Stage = {
 
 type FormState = {
   date: string
+  gunId: string
   club: string
   matchName: string
   discipline: keyof typeof DISCIPLINES
@@ -94,6 +104,7 @@ const today = new Date().toISOString().slice(0, 10)
 
 const initialForm: FormState = {
   date: today,
+  gunId: '',
   club: '',
   matchName: '',
   discipline: 'USPSA',
@@ -164,6 +175,7 @@ function youtubeEmbedUrl(value: string | null) {
 function formFromMatch(match: Match): FormState {
   return {
     date: dateForInput(match.date),
+    gunId: match.gunId ?? '',
     club: match.club,
     matchName: match.matchName ?? '',
     discipline: match.discipline,
@@ -196,6 +208,7 @@ function stageRowsFromMatch(match: Match): StageForm[] {
 
 export function MatchesDashboard() {
   const [matches, setMatches] = useState<Match[]>([])
+  const [guns, setGuns] = useState<Gun[]>([])
   const [form, setForm] = useState<FormState>(initialForm)
   const [stageRows, setStageRows] = useState<StageForm[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -243,17 +256,21 @@ export function MatchesDashboard() {
 
     async function loadMatches() {
       try {
-        const res = await fetch('/api/matches', { cache: 'no-store' })
+        const [matchesRes, gunsRes] = await Promise.all([
+          fetch('/api/matches', { cache: 'no-store' }),
+          fetch('/api/guns', { cache: 'no-store' }),
+        ])
         if (!isActive) return
 
-        if (!res.ok) {
+        if (!matchesRes.ok || !gunsRes.ok) {
           setError('Could not load matches.')
           setIsLoading(false)
           return
         }
 
-        const loadedMatches = (await res.json()) as Match[]
+        const loadedMatches = (await matchesRes.json()) as Match[]
         setMatches(loadedMatches)
+        setGuns(await gunsRes.json())
         setSelectedMatchId((current) =>
           current && loadedMatches.some((match) => match.id === current) ? current : null,
         )
@@ -335,6 +352,7 @@ export function MatchesDashboard() {
 
     const payload = {
       date: form.date,
+      gunId: form.gunId || undefined,
       club: form.club.trim(),
       matchName: form.matchName.trim() || undefined,
       discipline: form.discipline,
@@ -613,6 +631,7 @@ export function MatchesDashboard() {
                               <Badge>{DISCIPLINES[match.discipline]}</Badge>
                               {match.division ? <Badge>{match.division}</Badge> : null}
                               <Badge>{MATCH_TIERS[match.tier]}</Badge>
+                              {match.gun ? <Badge>{match.gun.name}</Badge> : null}
                               {match.stages.length > 0 ? <Badge>{match.stages.length} stages</Badge> : null}
                               {match.dq ? (
                                 <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-700">
@@ -742,6 +761,21 @@ export function MatchesDashboard() {
                 className="input"
                 placeholder="May USPSA"
               />
+            </Field>
+
+            <Field label="Firearm / build">
+              <select
+                value={form.gunId}
+                onChange={(event) => updateField('gunId', event.target.value)}
+                className="input"
+              >
+                <option value="">Not linked</option>
+                {guns.map((gun) => (
+                  <option key={gun.id} value={gun.id}>
+                    {gun.name} · {gun.caliber}
+                  </option>
+                ))}
+              </select>
             </Field>
 
             <div className="grid gap-3 sm:grid-cols-2">

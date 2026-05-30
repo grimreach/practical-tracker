@@ -11,8 +11,25 @@ import {
   validateExpenseForm,
 } from '@/lib/edit-flows.mjs'
 
+type Gun = {
+  id: string
+  name: string
+  caliber: string
+}
+
+type MatchOption = {
+  id: string
+  date: string
+  club: string
+  matchName: string | null
+}
+
 type Expense = {
   id: string
+  gunId: string | null
+  matchId: string | null
+  gun: Gun | null
+  match: MatchOption | null
   date: string
   category: keyof typeof EXPENSE_CATEGORIES
   item: string
@@ -25,6 +42,8 @@ type Expense = {
 type ExpenseForm = {
   date: string
   category: keyof typeof EXPENSE_CATEGORIES
+  gunId: string
+  matchId: string
   item: string
   amount: string
   vendor: string
@@ -39,6 +58,8 @@ const today = new Date().toISOString().slice(0, 10)
 const initialForm: ExpenseForm = {
   date: today,
   category: 'MATCH_FEES',
+  gunId: '',
+  matchId: '',
   item: '',
   amount: '',
   vendor: '',
@@ -62,6 +83,8 @@ function monthLabel(value: string) {
 
 export function ExpensesDashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([])
+  const [guns, setGuns] = useState<Gun[]>([])
+  const [matches, setMatches] = useState<MatchOption[]>([])
   const [form, setForm] = useState<ExpenseForm>(initialForm)
   const [query, setQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<ExpenseCategory | 'ALL'>('ALL')
@@ -132,16 +155,22 @@ export function ExpensesDashboard() {
 
     async function loadExpenses() {
       try {
-        const res = await fetch('/api/expenses', { cache: 'no-store' })
+        const [expensesRes, gunsRes, matchesRes] = await Promise.all([
+          fetch('/api/expenses', { cache: 'no-store' }),
+          fetch('/api/guns', { cache: 'no-store' }),
+          fetch('/api/matches?limit=200', { cache: 'no-store' }),
+        ])
         if (!isActive) return
 
-        if (!res.ok) {
+        if (!expensesRes.ok || !gunsRes.ok || !matchesRes.ok) {
           setError('Could not load expenses.')
           setIsLoading(false)
           return
         }
 
-        setExpenses(await res.json())
+        setExpenses(await expensesRes.json())
+        setGuns(await gunsRes.json())
+        setMatches(await matchesRes.json())
         setIsLoading(false)
       } catch {
         if (!isActive) return
@@ -212,6 +241,8 @@ export function ExpensesDashboard() {
     const payload = {
       date: form.date,
       category: form.category,
+      gunId: form.gunId || undefined,
+      matchId: form.matchId || undefined,
       item: form.item.trim(),
       amount: Number(form.amount),
       vendor: form.vendor.trim() || undefined,
@@ -365,6 +396,13 @@ export function ExpensesDashboard() {
                           {fmtDate(expense.date)}
                           {expense.vendor ? ` · ${expense.vendor}` : ''}
                         </p>
+                        {expense.gun || expense.match ? (
+                          <p className="mt-1 text-xs font-medium text-zinc-500">
+                            {[expense.gun?.name, expense.match ? expense.match.matchName || expense.match.club : null]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </p>
+                        ) : null}
                         {expense.notes ? (
                           <p className="mt-3 max-w-2xl text-sm text-zinc-600">{expense.notes}</p>
                         ) : null}
@@ -528,6 +566,25 @@ export function ExpensesDashboard() {
                 ))}
               </select>
             </Field>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Firearm / build">
+                <select value={form.gunId} onChange={(event) => updateField('gunId', event.target.value)} className="input">
+                  <option value="">Not linked</option>
+                  {guns.map((gun) => (
+                    <option key={gun.id} value={gun.id}>{gun.name} · {gun.caliber}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Related match">
+                <select value={form.matchId} onChange={(event) => updateField('matchId', event.target.value)} className="input">
+                  <option value="">Not linked</option>
+                  {matches.map((match) => (
+                    <option key={match.id} value={match.id}>{match.matchName || match.club}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
 
             <Field label="Item" error={validationErrors.item}>
               <input

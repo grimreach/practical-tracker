@@ -10,6 +10,8 @@ const schema = z.object({
   amount:   z.number().positive(),
   vendor:   z.string().optional(),
   url:      z.url().optional().or(z.literal('')),
+  gunId:    z.string().optional(),
+  matchId:  z.string().optional(),
   notes:    z.string().optional(),
 })
 
@@ -38,8 +40,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       amount: d.amount,
       vendor: d.vendor,
       url: d.url || null,
+      gunId: d.gunId,
+      matchId: d.matchId,
       notes: d.notes,
     },
+    include: { gun: true, match: true },
   })
   return NextResponse.json(expense)
 }

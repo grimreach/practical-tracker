@@ -37,6 +37,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       where: { id },
       data: {
         date:             new Date(d.date),
+        gunId:            d.gunId,
         club:             d.club,
         matchName:        d.matchName,
         discipline:       d.discipline,
@@ -54,7 +55,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         notes:            d.notes,
         stages: { create: d.stages },
       },
-      include: { stages: { orderBy: { stageNum: 'asc' } } },
+      include: { stages: { orderBy: { stageNum: 'asc' } }, gun: true },
     })
   })
   return NextResponse.json(match)

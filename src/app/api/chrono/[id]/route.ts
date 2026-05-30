@@ -7,6 +7,7 @@ import { calcPF } from '@/lib/constants'
 const schema = z.object({
   date:            z.string(),
   gunId:           z.string().optional(),
+  matchId:         z.string().optional(),
   ammoDescription: z.string().optional(),
   bulletWeight:    z.number().positive(),
   bulletType:      z.string().optional(),
@@ -44,6 +45,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     where: { id },
     data: {
       gunId: d.gunId,
+      matchId: d.matchId,
       date: new Date(d.date),
       ammoDescription: d.ammoDescription,
       bulletWeight: d.bulletWeight,
@@ -61,7 +63,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       powerFactor,
       notes: d.notes,
     },
-    include: { gun: true },
+    include: { gun: true, match: true },
   })
   return NextResponse.json(entry)
 }
