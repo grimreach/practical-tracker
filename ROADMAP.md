@@ -116,6 +116,9 @@ Status: proposed
 
 - [x] Cleanup pass: make gun build parts more editable by allowing saved part prices to be adjusted inline before saving the build.
 - [ ] Cleanup pass: consolidate repeated dashboard card styles, relationship labels, and chart empty states.
+  - [x] Extract shared dashboard metric, badge, stat, field, and empty-state primitives.
+  - [ ] Standardize relationship labels across dashboard timelines and cards.
+  - [ ] Standardize chart empty states.
 - [ ] Feature pass: add PractiScore CSV import preview and confirm flow.
   - [x] Preview uploaded/exported PractiScore CSV rows with match/stage counts and detected scoring fields before any mutation.
   - [x] Add confirm/apply flow after preview once mapping choices are settled.

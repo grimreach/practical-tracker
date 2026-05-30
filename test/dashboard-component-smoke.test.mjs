@@ -77,6 +77,26 @@ test('smoke contracts stay anchored to real component headings and empty states'
   }
 })
 
+test('dashboard form tabs share reusable UI primitives instead of local helper copies', () => {
+  const sharedUiSource = readFileSync(new URL('../src/app/dashboard-ui.tsx', import.meta.url), 'utf8')
+  for (const exportedName of [
+    'DashboardMetric',
+    'DashboardBadge',
+    'DashboardStat',
+    'DashboardField',
+    'DashboardStateBlock',
+  ]) {
+    assert.match(sharedUiSource, new RegExp(`export function ${exportedName}\\b`))
+  }
+
+  for (const tabId of ['matches', 'guns', 'expenses', 'chrono', 'maintenance']) {
+    const tab = getDashboardTabSmokeContract(tabId)
+    const source = readFileSync(tab.sourcePath, 'utf8')
+    assert.ok(source.includes("from './dashboard-ui'"), `${tab.componentName} should import shared dashboard UI primitives`)
+    assert.doesNotMatch(source, /function (Metric|Badge|Stat|Field|StateBlock)\b/)
+  }
+})
+
 test('throws a clear error for unknown dashboard smoke targets', () => {
   assert.throws(
     () => getDashboardTabSmokeContract('unknown'),

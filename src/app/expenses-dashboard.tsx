@@ -10,6 +10,7 @@ import {
   hasValidationErrors,
   validateExpenseForm,
 } from '@/lib/edit-flows.mjs'
+import { DashboardBadge as Badge, DashboardField as Field, DashboardMetric as Metric } from './dashboard-ui'
 
 type Gun = {
   id: string
@@ -648,33 +649,5 @@ export function ExpensesDashboard() {
         </form>
       </aside>
     </div>
-  )
-}
-
-function Metric({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return (
-    <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</p>
-      <p className="mt-1 truncate text-xl font-semibold text-zinc-950">{value}</p>
-      <p className="mt-1 truncate text-xs text-zinc-500">{detail}</p>
-    </div>
-  )
-}
-
-function Badge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-700">
-      {children}
-    </span>
-  )
-}
-
-function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
-  return (
-    <label className="grid gap-1.5 text-sm font-medium text-zinc-700">
-      {label}
-      {children}
-      {error ? <span className="text-xs font-medium text-red-700">{error}</span> : null}
-    </label>
   )
 }
