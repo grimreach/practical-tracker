@@ -9,11 +9,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) prin
 ### Added
 
 - Added a confirmed PractiScore CSV import apply endpoint at `/api/import/apply` using `workflow: "practiscore-csv-v1"` plus explicit `confirm: true` safety.
+- Added a signed-in Matches dashboard import card for uploading, previewing, and applying PractiScore CSV exports.
 - Added PractiScore CSV import planning for match/stage creation payloads, duplicate skipping, missing-date blocking, and framework-free apply-plan tests.
 
 ### Changed
 
-- Advanced the Phase 7 PractiScore import track with confirm/apply backend support complete and UI wiring still pending.
+- Advanced the Phase 7 PractiScore import track with preview, backend confirm/apply support, and dashboard UI wiring complete.
 - Bumped app version from `0.13.0` to `0.14.0`.
 
 ## [0.13.0] - 2026-05-30
