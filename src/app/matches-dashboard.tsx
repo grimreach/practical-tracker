@@ -1,7 +1,7 @@
 'use client'
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { ArrowUpDown, ChevronLeft, Edit3, ExternalLink, Filter, LayoutGrid, List, PlayCircle, Plus, Search, Trash2, X } from 'lucide-react'
+import { ArrowUpDown, ChevronLeft, Edit3, ExternalLink, Filter, LayoutGrid, List, PlayCircle, Plus, Search, Trash2, Upload, X } from 'lucide-react'
 import {
   DISCIPLINES,
   DIVISIONS,
@@ -99,6 +99,20 @@ type MatchSort = keyof typeof MATCH_SORTS
 type MatchViewMode = 'cards' | 'compact'
 type DisciplineFilter = keyof typeof DISCIPLINES | 'ALL'
 type TierFilter = keyof typeof MATCH_TIERS | 'ALL'
+
+type ImportPreviewSummary = {
+  counts: {
+    rows: number
+    matches: number
+    stages: number
+  }
+  matches: Array<{
+    name: string
+    date: string | null
+    club: string | null
+    stageCount: number
+  }>
+}
 
 const today = new Date().toISOString().slice(0, 10)
 
@@ -223,6 +237,10 @@ export function MatchesDashboard() {
   const [viewMode, setViewMode] = useState<MatchViewMode>('cards')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [importCsv, setImportCsv] = useState('')
+  const [importFileName, setImportFileName] = useState('')
+  const [importPreview, setImportPreview] = useState<ImportPreviewSummary | null>(null)
+  const [isImporting, setIsImporting] = useState(false)
 
   const divisions = useMemo(() => DIVISIONS[form.discipline] ?? [], [form.discipline])
   const matchCount = matches.length
@@ -450,6 +468,82 @@ export function MatchesDashboard() {
         currentIndex === index ? { ...stage, [key]: value } : stage,
       ),
     )
+  }
+
+  async function handleImportFile(file: File | undefined) {
+    if (!file) return
+    setError(null)
+    setSuccess(null)
+    setImportPreview(null)
+    setImportFileName(file.name)
+    setImportCsv(await file.text())
+  }
+
+  async function previewPractiscoreImport() {
+    if (!importCsv.trim()) {
+      setError('Choose a PractiScore CSV file first.')
+      return
+    }
+
+    setIsImporting(true)
+    setError(null)
+    setSuccess(null)
+
+    const res = await fetch('/api/import/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ app: 'practical-tracker', workflow: 'practiscore-csv-v1', csv: importCsv }),
+    })
+    const body = await res.json()
+
+    if (!res.ok) {
+      setError(body.error ?? 'Could not preview PractiScore CSV.')
+      setIsImporting(false)
+      return
+    }
+
+    setImportPreview(body.summary as ImportPreviewSummary)
+    setSuccess('PractiScore CSV preview ready. Review it, then apply when ready.')
+    setIsImporting(false)
+  }
+
+  async function applyPractiscoreImport() {
+    if (!importCsv.trim()) {
+      setError('Choose a PractiScore CSV file first.')
+      return
+    }
+    if (!importPreview) {
+      setError('Preview the PractiScore CSV before applying it.')
+      return
+    }
+
+    setIsImporting(true)
+    setError(null)
+    setSuccess(null)
+
+    const res = await fetch('/api/import/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ app: 'practical-tracker', workflow: 'practiscore-csv-v1', confirm: true, csv: importCsv }),
+    })
+    const body = await res.json()
+
+    if (!res.ok) {
+      setError(body.error ?? 'Could not apply PractiScore CSV import.')
+      setIsImporting(false)
+      return
+    }
+
+    const matchesRes = await fetch('/api/matches', { cache: 'no-store' })
+    if (matchesRes.ok) {
+      setMatches(await matchesRes.json())
+    }
+
+    setImportCsv('')
+    setImportFileName('')
+    setImportPreview(null)
+    setSuccess(`Imported ${body.summary.createdMatches} match${body.summary.createdMatches === 1 ? '' : 'es'} from PractiScore CSV.`)
+    setIsImporting(false)
   }
 
   return (
@@ -706,7 +800,72 @@ export function MatchesDashboard() {
         )}
       </section>
 
-      <aside className="lg:sticky lg:top-6 lg:self-start">
+      <aside className="grid gap-4 lg:sticky lg:top-6 lg:self-start">
+        <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+          <div className="mb-4 flex items-start gap-3">
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+              <Upload className="h-4 w-4" />
+            </span>
+            <div>
+              <h2 className="text-base font-semibold text-zinc-950">Import PractiScore CSV</h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                Preview first, then apply to create match and stage records.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3">
+            <label className="grid gap-1 text-xs font-medium text-zinc-600">
+              CSV export
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                onChange={(event) => void handleImportFile(event.target.files?.[0])}
+                className="input"
+              />
+            </label>
+
+            {importFileName ? (
+              <p className="text-xs text-zinc-500">Selected: {importFileName}</p>
+            ) : null}
+
+            {importPreview ? (
+              <div className="rounded-md border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm text-indigo-900">
+                <p className="font-semibold">
+                  {importPreview.counts.matches} match{importPreview.counts.matches === 1 ? '' : 'es'} ·{' '}
+                  {importPreview.counts.stages} stage{importPreview.counts.stages === 1 ? '' : 's'} ·{' '}
+                  {importPreview.counts.rows} row{importPreview.counts.rows === 1 ? '' : 's'}
+                </p>
+                {importPreview.matches[0] ? (
+                  <p className="mt-1 text-xs text-indigo-700">
+                    First match: {importPreview.matches[0].name}
+                    {importPreview.matches[0].date ? ` · ${importPreview.matches[0].date}` : ''}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => void previewPractiscoreImport()}
+                disabled={isImporting || !importCsv}
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isImporting ? 'Working...' : 'Preview'}
+              </button>
+              <button
+                type="button"
+                onClick={() => void applyPractiscoreImport()}
+                disabled={isImporting || !importPreview}
+                className="rounded-md bg-zinc-950 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400"
+              >
+                Apply Import
+              </button>
+            </div>
+          </div>
+        </section>
+
         <form
           onSubmit={handleSubmit}
           className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm"
