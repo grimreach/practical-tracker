@@ -4,6 +4,21 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.11.0] - 2026-05-30
+
+### Added
+
+- Linked matches to firearm/build profiles from the Match History form and match cards.
+- Linked chrono/load records to firearm/build profiles and related matches.
+- Linked expenses to firearm/build profiles and related matches.
+- Added a database migration for expense and chrono match/equipment relationships.
+- Added PractiScore import to the roadmap as the next integration track, starting with CSV/export upload before URL import.
+
+### Changed
+
+- Included linked gun and match context in expense and chrono timelines.
+- Bumped app version from `0.10.1` to `0.11.0`.
+
 ## [0.10.1] - 2026-05-29
 
 ### Added

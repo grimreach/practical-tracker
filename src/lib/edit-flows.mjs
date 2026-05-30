@@ -26,6 +26,8 @@ export function expenseFormFromRecord(record) {
   return {
     date: dateOnly(record.date),
     category: record.category,
+    gunId: nullableString(record.gunId),
+    matchId: nullableString(record.matchId),
     item: nullableString(record.item),
     amount: numericString(record.amount),
     vendor: nullableString(record.vendor),
@@ -37,6 +39,8 @@ export function expenseFormFromRecord(record) {
 export function chronoFormFromRecord(record) {
   return {
     date: dateOnly(record.date),
+    gunId: nullableString(record.gunId),
+    matchId: nullableString(record.matchId),
     ammoDescription: nullableString(record.ammoDescription),
     bulletWeight: numericString(record.bulletWeight),
     bulletType: nullableString(record.bulletType),

@@ -20,6 +20,8 @@ test('validates and maps expense create payloads for the API route', () => {
     amount: 42.5,
     vendor: 'Range shop',
     url: '',
+    gunId: 'gun_pcc',
+    matchId: 'match_weeknight',
     notes: 'Local match resupply',
   })
 
@@ -29,6 +31,8 @@ test('validates and maps expense create payloads for the API route', () => {
   assert.equal(data.userId, userId)
   assert.equal(data.category, 'AMMO')
   assert.equal(data.amount, 42.5)
+  assert.equal(data.gunId, 'gun_pcc')
+  assert.equal(data.matchId, 'match_weeknight')
   assert.equal(data.url, null)
   assert.equal(data.date.toISOString(), '2026-05-29T00:00:00.000Z')
 })
@@ -50,6 +54,7 @@ test('validates and maps chrono create payloads including calculated power facto
   const parsed = parseChronoCreatePayload({
     date: '2026-05-29',
     gunId: 'gun_pcc',
+    matchId: 'match_weeknight',
     ammoDescription: '124gr test load',
     bulletWeight: 124,
     avgVelocity: 1075,
@@ -63,6 +68,7 @@ test('validates and maps chrono create payloads including calculated power facto
 
   assert.equal(data.userId, userId)
   assert.equal(data.gunId, 'gun_pcc')
+  assert.equal(data.matchId, 'match_weeknight')
   assert.equal(data.powerFactor, 133.3)
   assert.equal(data.strings, 10)
   assert.equal(data.date.toISOString(), '2026-05-29T00:00:00.000Z')

@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       notes:            d.notes,
       stages: { create: d.stages },
     },
-    include: { stages: { orderBy: { stageNum: 'asc' } } },
+    include: { stages: { orderBy: { stageNum: 'asc' } }, gun: true },
   })
 
   return NextResponse.json(match, { status: 201 })

@@ -21,12 +21,15 @@ export const expenseCreateSchema = z.object({
   amount: z.number().positive(),
   vendor: z.string().optional(),
   url: z.url().optional().or(z.literal('')),
+  gunId: z.string().optional(),
+  matchId: z.string().optional(),
   notes: z.string().optional(),
 })
 
 export const chronoCreateSchema = z.object({
   date: z.string(),
   gunId: z.string().optional(),
+  matchId: z.string().optional(),
   ammoDescription: z.string().optional(),
   bulletWeight: z.number().positive(),
   bulletType: z.string().optional(),
@@ -77,6 +80,8 @@ export function buildExpenseCreateData(userId, data) {
     amount: data.amount,
     vendor: data.vendor,
     url: data.url || null,
+    gunId: data.gunId,
+    matchId: data.matchId,
     notes: data.notes,
   }
 }
@@ -85,6 +90,7 @@ export function buildChronoCreateData(userId, data) {
   return {
     userId,
     gunId: data.gunId,
+    matchId: data.matchId,
     date: new Date(data.date),
     ammoDescription: data.ammoDescription,
     bulletWeight: data.bulletWeight,

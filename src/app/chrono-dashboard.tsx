@@ -11,8 +11,25 @@ import {
   validateChronoForm,
 } from '@/lib/edit-flows.mjs'
 
+type Gun = {
+  id: string
+  name: string
+  caliber: string
+}
+
+type MatchOption = {
+  id: string
+  date: string
+  club: string
+  matchName: string | null
+}
+
 type ChronoEntry = {
   id: string
+  gunId: string | null
+  matchId: string | null
+  gun: Gun | null
+  match: MatchOption | null
   date: string
   ammoDescription: string | null
   bulletWeight: number
@@ -33,6 +50,8 @@ type ChronoEntry = {
 
 type ChronoForm = {
   date: string
+  gunId: string
+  matchId: string
   ammoDescription: string
   bulletWeight: string
   bulletType: string
@@ -53,6 +72,8 @@ const today = new Date().toISOString().slice(0, 10)
 
 const initialForm: ChronoForm = {
   date: today,
+  gunId: '',
+  matchId: '',
   ammoDescription: '',
   bulletWeight: '124',
   bulletType: '',
@@ -89,6 +110,8 @@ function pfLabel(pf: number) {
 
 export function ChronoDashboard() {
   const [entries, setEntries] = useState<ChronoEntry[]>([])
+  const [guns, setGuns] = useState<Gun[]>([])
+  const [matches, setMatches] = useState<MatchOption[]>([])
   const [form, setForm] = useState<ChronoForm>(initialForm)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -114,16 +137,22 @@ export function ChronoDashboard() {
 
     async function loadEntries() {
       try {
-        const res = await fetch('/api/chrono', { cache: 'no-store' })
+        const [chronoRes, gunsRes, matchesRes] = await Promise.all([
+          fetch('/api/chrono', { cache: 'no-store' }),
+          fetch('/api/guns', { cache: 'no-store' }),
+          fetch('/api/matches?limit=200', { cache: 'no-store' }),
+        ])
         if (!isActive) return
 
-        if (!res.ok) {
+        if (!chronoRes.ok || !gunsRes.ok || !matchesRes.ok) {
           setError('Could not load chrono entries.')
           setIsLoading(false)
           return
         }
 
-        setEntries(await res.json())
+        setEntries(await chronoRes.json())
+        setGuns(await gunsRes.json())
+        setMatches(await matchesRes.json())
         setIsLoading(false)
       } catch {
         if (!isActive) return
@@ -194,6 +223,8 @@ export function ChronoDashboard() {
 
     const payload = {
       date: form.date,
+      gunId: form.gunId || undefined,
+      matchId: form.matchId || undefined,
       ammoDescription: form.ammoDescription.trim() || undefined,
       bulletWeight: Number(form.bulletWeight),
       bulletType: form.bulletType.trim() || undefined,
@@ -295,6 +326,13 @@ export function ChronoDashboard() {
                         {entry.powder ? ` · ${entry.powder}` : ''}
                         {entry.powderCharge ? ` ${entry.powderCharge}gr` : ''}
                       </p>
+                      {entry.gun || entry.match ? (
+                        <p className="mt-1 text-xs font-medium text-zinc-500">
+                          {[entry.gun?.name, entry.match ? entry.match.matchName || entry.match.club : null]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </p>
+                      ) : null}
                       <div className="mt-3 grid gap-2 text-sm text-zinc-600 sm:grid-cols-2 lg:grid-cols-4">
                         <Stat label="Avg" value={`${Math.round(entry.avgVelocity)} fps`} />
                         <Stat label="PF" value={entry.powerFactor.toString()} />
@@ -389,6 +427,24 @@ export function ChronoDashboard() {
             <Field label="Ammo description">
               <input value={form.ammoDescription} onChange={(event) => updateField('ammoDescription', event.target.value)} className="input" placeholder="124gr coated match load" />
             </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Firearm / build">
+                <select value={form.gunId} onChange={(event) => updateField('gunId', event.target.value)} className="input">
+                  <option value="">Not linked</option>
+                  {guns.map((gun) => (
+                    <option key={gun.id} value={gun.id}>{gun.name} · {gun.caliber}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Related match">
+                <select value={form.matchId} onChange={(event) => updateField('matchId', event.target.value)} className="input">
+                  <option value="">Not linked</option>
+                  {matches.map((match) => (
+                    <option key={match.id} value={match.id}>{match.matchName || match.club}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Bullet weight" error={validationErrors.bulletWeight}>
                 <input required min="1" step="0.1" type="number" value={form.bulletWeight} onChange={(event) => updateField('bulletWeight', event.target.value)} className="input" placeholder="124" />

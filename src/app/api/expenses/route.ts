@@ -6,7 +6,11 @@ import { buildExpenseCreateData, parseExpenseCreatePayload } from '@/lib/api-rou
 export async function GET() {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const expenses = await prisma.expense.findMany({ where: { userId: session.user.id }, orderBy: { date: 'desc' } })
+  const expenses = await prisma.expense.findMany({
+    where: { userId: session.user.id },
+    orderBy: { date: 'desc' },
+    include: { gun: true, match: true },
+  })
   return NextResponse.json(expenses)
 }
 
@@ -17,7 +21,8 @@ export async function POST(req: NextRequest) {
   const parsed = parseExpenseCreatePayload(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   const expense = await prisma.expense.create({
-    data: buildExpenseCreateData(session.user.id, parsed.data)
+    data: buildExpenseCreateData(session.user.id, parsed.data),
+    include: { gun: true, match: true },
   })
   return NextResponse.json(expense, { status: 201 })
 }
