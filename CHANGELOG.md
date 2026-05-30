@@ -4,6 +4,19 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.4.0] - 2026-05-29
+
+### Added
+
+- Added a persistent light/dark theme switch in both signed-in and signed-out headers.
+- Added startup theme hydration so the saved preference applies before the UI paints.
+- Added unit coverage for theme selection and toggling helpers.
+
+### Changed
+
+- Added a warm light palette while preserving the existing premium dark default.
+- Bumped app version from `0.3.0` to `0.4.0`.
+
 ## [0.3.0] - 2026-05-29
 
 ### Added

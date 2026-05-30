@@ -2,6 +2,7 @@ import { auth, signIn, signOut } from '@/auth'
 import { APP_VERSION_LABEL } from '@/lib/version'
 import { Activity, ArrowRight, Gauge, LogIn, ShieldCheck, Target, Wallet } from 'lucide-react'
 import { AppDashboard } from './app-dashboard'
+import { ThemeToggle } from './theme-toggle'
 
 const featureCards = [
   {
@@ -54,16 +55,19 @@ export default async function Home() {
                 </div>
               </div>
 
-              <form
-                action={async () => {
-                  'use server'
-                  await signOut({ redirectTo: '/' })
-                }}
-              >
-                <button className="inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-100">
-                  Sign out
-                </button>
-              </form>
+              <div className="flex flex-wrap items-center gap-3">
+                <ThemeToggle />
+                <form
+                  action={async () => {
+                    'use server'
+                    await signOut({ redirectTo: '/' })
+                  }}
+                >
+                  <button className="inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-100">
+                    Sign out
+                  </button>
+                </form>
+              </div>
             </div>
           </header>
 
@@ -84,16 +88,19 @@ export default async function Home() {
               </span>
               <span className="sport-pill">{APP_VERSION_LABEL}</span>
             </div>
-            <form
-              action={async () => {
-                'use server'
-                await signIn('github', { redirectTo: '/' })
-              }}
-            >
-              <button className="ghost-button hidden sm:inline-flex">
-                <LogIn className="h-4 w-4" /> Sign in
-              </button>
-            </form>
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <form
+                action={async () => {
+                  'use server'
+                  await signIn('github', { redirectTo: '/' })
+                }}
+              >
+                <button className="ghost-button hidden sm:inline-flex">
+                  <LogIn className="h-4 w-4" /> Sign in
+                </button>
+              </form>
+            </div>
           </header>
 
           <section className="mx-auto grid w-full max-w-7xl flex-1 items-center gap-12 px-6 pb-16 pt-8 lg:grid-cols-[minmax(0,1fr)_460px] lg:px-8 lg:pb-24">

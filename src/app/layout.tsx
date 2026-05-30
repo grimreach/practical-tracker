@@ -12,8 +12,24 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const themeScript = `(() => {
+    try {
+      const key = 'practical-tracker-theme';
+      const stored = window.localStorage.getItem(key);
+      const theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.style.colorScheme = theme;
+    } catch {
+      document.documentElement.dataset.theme = 'dark';
+      document.documentElement.style.colorScheme = 'dark';
+    }
+  })();`
+
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>{children}</body>
     </html>
   )
