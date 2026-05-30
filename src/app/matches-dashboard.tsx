@@ -1,6 +1,7 @@
 'use client'
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { ExternalLink, Plus, Trash2 } from 'lucide-react'
 import {
   DISCIPLINES,
   DIVISIONS,
@@ -26,7 +27,14 @@ type Match = {
   pfType: string | null
   dq: boolean
   notes: string | null
-  stages: Array<{ id: string }>
+  stages: Stage[]
+}
+
+type Stage = {
+  id: string
+  stageNum: number
+  stageName: string | null
+  youtubeUrl: string | null
 }
 
 type FormState = {
@@ -43,6 +51,12 @@ type FormState = {
   powerFactor: string
   pfType: string
   notes: string
+}
+
+type StageForm = {
+  stageNum: string
+  stageName: string
+  youtubeUrl: string
 }
 
 const today = new Date().toISOString().slice(0, 10)
@@ -67,9 +81,23 @@ function toOptionalNumber(value: string) {
   return value.trim() === '' ? undefined : Number(value)
 }
 
+function isYouTubeUrl(value: string) {
+  if (value.trim() === '') return true
+
+  try {
+    const url = new URL(value)
+    const host = url.hostname.replace(/^www\./, '')
+    const isWebUrl = url.protocol === 'https:' || url.protocol === 'http:'
+    return isWebUrl && (host === 'youtube.com' || host === 'youtu.be' || host.endsWith('.youtube.com'))
+  } catch {
+    return false
+  }
+}
+
 export function MatchesDashboard() {
   const [matches, setMatches] = useState<Match[]>([])
   const [form, setForm] = useState<FormState>(initialForm)
+  const [stageRows, setStageRows] = useState<StageForm[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -128,6 +156,12 @@ export function MatchesDashboard() {
     setIsSaving(true)
     setError(null)
 
+    if (stageRows.some((stage) => !isYouTubeUrl(stage.youtubeUrl))) {
+      setError('Stage video links must be YouTube URLs.')
+      setIsSaving(false)
+      return
+    }
+
     const payload = {
       date: form.date,
       club: form.club.trim(),
@@ -142,7 +176,13 @@ export function MatchesDashboard() {
       powerFactor: toOptionalNumber(form.powerFactor),
       pfType: form.pfType || undefined,
       notes: form.notes.trim() || undefined,
-      stages: [],
+      stages: stageRows
+        .filter((stage) => stage.stageName.trim() || stage.youtubeUrl.trim())
+        .map((stage, index) => ({
+          stageNum: toOptionalNumber(stage.stageNum) ?? index + 1,
+          stageName: stage.stageName.trim() || undefined,
+          youtubeUrl: stage.youtubeUrl.trim() || undefined,
+        })),
     }
 
     const res = await fetch('/api/matches', {
@@ -160,7 +200,31 @@ export function MatchesDashboard() {
     const created = (await res.json()) as Match
     setMatches((current) => [created, ...current])
     setForm({ ...initialForm, date: form.date })
+    setStageRows([])
     setIsSaving(false)
+  }
+
+  function addStageRow() {
+    setStageRows((current) => [
+      ...current,
+      { stageNum: String(current.length + 1), stageName: '', youtubeUrl: '' },
+    ])
+  }
+
+  function removeStageRow(index: number) {
+    setStageRows((current) => current.filter((_, currentIndex) => currentIndex !== index))
+  }
+
+  function updateStageRow<Key extends keyof StageForm>(
+    index: number,
+    key: Key,
+    value: StageForm[Key],
+  ) {
+    setStageRows((current) =>
+      current.map((stage, currentIndex) =>
+        currentIndex === index ? { ...stage, [key]: value } : stage,
+      ),
+    )
   }
 
   return (
@@ -250,6 +314,33 @@ export function MatchesDashboard() {
                       ) : null}
                       {match.powerFactor && match.notes ? <span> · </span> : null}
                       {match.notes ? <span>{match.notes}</span> : null}
+                    </div>
+                  ) : null}
+
+                  {match.stages.some((stage) => stage.youtubeUrl) ? (
+                    <div className="mt-4 rounded-md border border-zinc-200 bg-zinc-50 p-3">
+                      <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                        Stage review
+                      </h4>
+                      <div className="mt-2 grid gap-2">
+                        {match.stages
+                          .filter((stage) => stage.youtubeUrl)
+                          .map((stage) => (
+                            <a
+                              key={stage.id}
+                              href={stage.youtubeUrl ?? '#'}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center justify-between gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:border-zinc-300 hover:bg-zinc-100"
+                            >
+                              <span className="min-w-0 truncate">
+                                Stage {stage.stageNum}
+                                {stage.stageName ? ` · ${stage.stageName}` : ''}
+                              </span>
+                              <ExternalLink className="h-4 w-4 shrink-0 text-zinc-500" />
+                            </a>
+                          ))}
+                      </div>
                     </div>
                   ) : null}
                 </article>
@@ -430,6 +521,92 @@ export function MatchesDashboard() {
                 placeholder="Classifier felt good, dropped points on stage 3."
               />
             </Field>
+
+            <section className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-zinc-900">Stage review</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={addStageRow}
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-zinc-300 bg-white text-zinc-700 shadow-sm hover:bg-zinc-100"
+                  aria-label="Add stage"
+                  title="Add stage"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+
+              {stageRows.length === 0 ? (
+                <button
+                  type="button"
+                  onClick={addStageRow}
+                  className="mt-3 w-full rounded-md border border-dashed border-zinc-300 px-3 py-3 text-sm font-medium text-zinc-600 hover:border-zinc-400 hover:bg-white"
+                >
+                  Add a stage video
+                </button>
+              ) : (
+                <div className="mt-3 grid gap-3">
+                  {stageRows.map((stage, index) => (
+                    <div
+                      key={index}
+                      className="grid gap-2 rounded-md border border-zinc-200 bg-white p-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <label className="grid w-20 gap-1 text-xs font-medium text-zinc-600">
+                          Stage
+                          <input
+                            min="1"
+                            type="number"
+                            value={stage.stageNum}
+                            onChange={(event) =>
+                              updateStageRow(index, 'stageNum', event.target.value)
+                            }
+                            className="input"
+                          />
+                        </label>
+
+                        <label className="grid min-w-0 flex-1 gap-1 text-xs font-medium text-zinc-600">
+                          Name
+                          <input
+                            value={stage.stageName}
+                            onChange={(event) =>
+                              updateStageRow(index, 'stageName', event.target.value)
+                            }
+                            className="input"
+                            placeholder="Stage plan"
+                          />
+                        </label>
+
+                        <button
+                          type="button"
+                          onClick={() => removeStageRow(index)}
+                          className="mt-5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 hover:bg-zinc-100"
+                          aria-label={`Remove stage ${index + 1}`}
+                          title="Remove stage"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <label className="grid gap-1 text-xs font-medium text-zinc-600">
+                        YouTube URL
+                        <input
+                          type="url"
+                          value={stage.youtubeUrl}
+                          onChange={(event) =>
+                            updateStageRow(index, 'youtubeUrl', event.target.value)
+                          }
+                          className="input"
+                          placeholder="https://youtu.be/..."
+                        />
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
 
           <button

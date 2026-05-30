@@ -4,6 +4,13 @@ import { prisma } from '@/lib/prisma'
 import type { Discipline } from '@/generated/prisma/client'
 import { z } from 'zod'
 
+const youtubeUrlSchema = z.url().refine((value) => {
+  const url = new URL(value)
+  const host = url.hostname.replace(/^www\./, '')
+  const isWebUrl = url.protocol === 'https:' || url.protocol === 'http:'
+  return isWebUrl && (host === 'youtube.com' || host === 'youtu.be' || host.endsWith('.youtube.com'))
+}, 'Must be a YouTube URL')
+
 const stageSchema = z.object({
   stageNum:  z.number().int().min(1),
   stageName: z.string().optional(),
@@ -13,6 +20,7 @@ const stageSchema = z.object({
   misses:    z.number().int().default(0),
   penalties: z.number().int().default(0),
   dnf:       z.boolean().default(false),
+  youtubeUrl: youtubeUrlSchema.optional(),
   notes:     z.string().optional(),
 })
 
