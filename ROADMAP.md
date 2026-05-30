@@ -1,7 +1,7 @@
 # Practical Tracker Roadmap
 
 Last updated: 2026-05-29  
-Current app version: v0.9.0
+Current app version: v0.10.0
 
 ## Product direction
 
@@ -97,9 +97,9 @@ Acceptance criteria:
 
 ## Phase 6 — Reliability and release hardening
 
-Status: planned
+Status: in progress
 
-- [ ] Add automated tests for API routes and core form workflows.
+- [x] Add automated tests for API routes and core form workflows.
 - [ ] Add component smoke tests for major dashboard tabs.
 - [ ] Resolve dependency audit advisories in a dedicated maintenance PR.
 - [ ] Document deployment and release process.
