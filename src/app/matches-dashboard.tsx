@@ -412,7 +412,7 @@ export function MatchesDashboard() {
               </span>
             </div>
 
-            <div className="grid gap-2 border-b border-zinc-200 bg-zinc-50/60 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_180px_180px_170px_auto]">
+            <div className="space-y-3 border-b border-zinc-200 bg-zinc-50/60 px-4 py-4">
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                 <input
@@ -422,73 +422,75 @@ export function MatchesDashboard() {
                   placeholder="Search match, club, note, or stage..."
                 />
               </label>
-              <label className="relative block">
-                <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                <select
-                  value={disciplineFilter}
-                  onChange={(event) => setDisciplineFilter(event.target.value as DisciplineFilter)}
-                  className="input pl-9"
-                >
-                  <option value="ALL">All disciplines</option>
-                  {Object.entries(DISCIPLINES).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="relative block">
-                <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                <select
-                  value={tierFilter}
-                  onChange={(event) => setTierFilter(event.target.value as TierFilter)}
-                  className="input pl-9"
-                >
-                  <option value="ALL">All tiers</option>
-                  {Object.entries(MATCH_TIERS).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="relative block">
-                <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                <select
-                  value={sortMode}
-                  onChange={(event) => setSortMode(event.target.value as MatchSort)}
-                  className="input pl-9"
-                >
-                  {Object.entries(MATCH_SORTS).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="grid grid-cols-2 gap-2" aria-label="Match layout">
-                <button
-                  type="button"
-                  onClick={() => setViewMode('cards')}
-                  className={`inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition ${
-                    viewMode === 'cards'
-                      ? 'border-zinc-300 bg-white text-zinc-950 shadow-sm'
-                      : 'border-zinc-200 text-zinc-500 hover:bg-zinc-100'
-                  }`}
-                >
-                  <LayoutGrid className="h-4 w-4" /> Cards
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode('compact')}
-                  className={`inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition ${
-                    viewMode === 'compact'
-                      ? 'border-zinc-300 bg-white text-zinc-950 shadow-sm'
-                      : 'border-zinc-200 text-zinc-500 hover:bg-zinc-100'
-                  }`}
-                >
-                  <List className="h-4 w-4" /> List
-                </button>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+                <label className="relative block min-w-0">
+                  <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                  <select
+                    value={disciplineFilter}
+                    onChange={(event) => setDisciplineFilter(event.target.value as DisciplineFilter)}
+                    className="input pl-9"
+                  >
+                    <option value="ALL">All disciplines</option>
+                    {Object.entries(DISCIPLINES).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="relative block min-w-0">
+                  <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                  <select
+                    value={tierFilter}
+                    onChange={(event) => setTierFilter(event.target.value as TierFilter)}
+                    className="input pl-9"
+                  >
+                    <option value="ALL">All tiers</option>
+                    {Object.entries(MATCH_TIERS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="relative block min-w-0">
+                  <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                  <select
+                    value={sortMode}
+                    onChange={(event) => setSortMode(event.target.value as MatchSort)}
+                    className="input pl-9"
+                  >
+                    {Object.entries(MATCH_SORTS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="grid grid-cols-2 gap-2 sm:col-span-2 xl:col-span-1 xl:min-w-[170px]" aria-label="Match layout">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('cards')}
+                    className={`inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition ${
+                      viewMode === 'cards'
+                        ? 'border-zinc-300 bg-white text-zinc-950 shadow-sm'
+                        : 'border-zinc-200 text-zinc-500 hover:bg-zinc-100'
+                    }`}
+                  >
+                    <LayoutGrid className="h-4 w-4" /> Cards
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('compact')}
+                    className={`inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition ${
+                      viewMode === 'compact'
+                        ? 'border-zinc-300 bg-white text-zinc-950 shadow-sm'
+                        : 'border-zinc-200 text-zinc-500 hover:bg-zinc-100'
+                    }`}
+                  >
+                    <List className="h-4 w-4" /> List
+                  </button>
+                </div>
               </div>
             </div>
 

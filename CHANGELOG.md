@@ -4,6 +4,13 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.4.1] - 2026-05-29
+
+### Changed
+
+- Reworked the match card filter bar into a two-row layout with cleaner spacing and responsive wrapping.
+- Bumped app version from `0.4.0` to `0.4.1`.
+
 ## [0.4.0] - 2026-05-29
 
 ### Added
