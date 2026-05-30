@@ -128,18 +128,23 @@ model Match {
 }
 
 model StageScore {
-  id        String  @id @default(cuid())
-  matchId   String
-  stageNum  Int
-  stageName String?
-  score     Float   @default(0)
-  time      Float?
-  hits      Int?
-  misses    Int     @default(0)
-  penalties Int     @default(0)
-  dnf       Boolean @default(false)
-  youtubeUrl String?
-  notes     String?
+  id                    String  @id @default(cuid())
+  matchId               String
+  stageNum              Int
+  stageName             String?
+  score                 Float   @default(0)
+  points                Float?
+  time                  Float?
+  hitFactor             Float?
+  hits                  Int?
+  misses                Int     @default(0)
+  penalties             Int     @default(0)
+  stagePlacement        Int?
+  stageTotalCompetitors Int?
+  classifier            Boolean @default(false)
+  dnf                   Boolean @default(false)
+  youtubeUrl            String?
+  notes                 String?
 
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
 }

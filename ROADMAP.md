@@ -1,7 +1,7 @@
 # Practical Tracker Roadmap
 
 Last updated: 2026-05-29  
-Current app version: v0.8.1
+Current app version: v0.9.0
 
 ## Product direction
 
@@ -84,9 +84,9 @@ Acceptance criteria:
 
 ## Phase 5 — Scoring and analytics depth
 
-Status: planned
+Status: in progress
 
-- [ ] Add richer stage scoring fields: time, points, hit factor, penalties, stage placement, classifier flag.
+- [x] Add richer stage scoring fields: time, points, hit factor, penalties, stage placement, classifier flag.
 - [ ] Add charts for spend, rounds, percentile, PF/velocity, and maintenance intervals.
 - [ ] Add monthly/quarterly/season reports.
 - [ ] Add “best match / worst match / most expensive month / top load” report cards.

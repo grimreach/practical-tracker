@@ -15,6 +15,7 @@ import {
   getMatchFilterSummary,
 } from '@/lib/match-history.mjs'
 import { getStageReviewDetails } from '@/lib/stage-review.mjs'
+import { buildStageScoreSummary } from '@/lib/stage-scoring.mjs'
 
 type Match = {
   id: string
@@ -40,6 +41,17 @@ type Stage = {
   id: string
   stageNum: number
   stageName: string | null
+  score: number
+  points: number | null
+  time: number | null
+  hitFactor: number | null
+  hits: number | null
+  misses: number
+  penalties: number
+  stagePlacement: number | null
+  stageTotalCompetitors: number | null
+  classifier: boolean
+  dnf: boolean
   youtubeUrl: string | null
   notes: string | null
 }
@@ -63,6 +75,12 @@ type FormState = {
 type StageForm = {
   stageNum: string
   stageName: string
+  points: string
+  time: string
+  penalties: string
+  stagePlacement: string
+  stageTotalCompetitors: string
+  classifier: boolean
   youtubeUrl: string
   notes: string
 }
@@ -94,8 +112,8 @@ function dateForInput(value: string) {
   return new Date(value).toISOString().slice(0, 10)
 }
 
-function numberToInput(value: number | null) {
-  return value === null ? '' : String(value)
+function numberToInput(value: number | null | undefined) {
+  return value == null ? '' : String(value)
 }
 
 function toOptionalNumber(value: string) {
@@ -165,6 +183,12 @@ function stageRowsFromMatch(match: Match): StageForm[] {
   return match.stages.map((stage) => ({
     stageNum: String(stage.stageNum),
     stageName: stage.stageName ?? '',
+    points: numberToInput(stage.points ?? stage.score),
+    time: numberToInput(stage.time),
+    penalties: numberToInput(stage.penalties),
+    stagePlacement: numberToInput(stage.stagePlacement),
+    stageTotalCompetitors: numberToInput(stage.stageTotalCompetitors),
+    classifier: stage.classifier ?? false,
     youtubeUrl: stage.youtubeUrl ?? '',
     notes: stage.notes ?? '',
   }))
@@ -324,10 +348,27 @@ export function MatchesDashboard() {
       pfType: form.pfType || undefined,
       notes: form.notes.trim() || undefined,
       stages: stageRows
-        .filter((stage) => stage.stageName.trim() || stage.youtubeUrl.trim() || stage.notes.trim())
+        .filter(
+          (stage) =>
+            stage.stageName.trim() ||
+            stage.youtubeUrl.trim() ||
+            stage.notes.trim() ||
+            stage.points.trim() ||
+            stage.time.trim() ||
+            stage.penalties.trim() ||
+            stage.stagePlacement.trim() ||
+            stage.stageTotalCompetitors.trim() ||
+            stage.classifier,
+        )
         .map((stage, index) => ({
           stageNum: toOptionalNumber(stage.stageNum) ?? index + 1,
           stageName: stage.stageName.trim() || undefined,
+          points: toOptionalNumber(stage.points),
+          time: toOptionalNumber(stage.time),
+          penalties: toOptionalNumber(stage.penalties) ?? 0,
+          stagePlacement: toOptionalNumber(stage.stagePlacement),
+          stageTotalCompetitors: toOptionalNumber(stage.stageTotalCompetitors),
+          classifier: stage.classifier,
           youtubeUrl: stage.youtubeUrl.trim() || undefined,
           notes: stage.notes.trim() || undefined,
         })),
@@ -362,7 +403,18 @@ export function MatchesDashboard() {
   function addStageRow() {
     setStageRows((current) => [
       ...current,
-      { stageNum: String(current.length + 1), stageName: '', youtubeUrl: '', notes: '' },
+      {
+        stageNum: String(current.length + 1),
+        stageName: '',
+        points: '',
+        time: '',
+        penalties: '',
+        stagePlacement: '',
+        stageTotalCompetitors: '',
+        classifier: false,
+        youtubeUrl: '',
+        notes: '',
+      },
     ])
   }
 
@@ -888,6 +940,80 @@ export function MatchesDashboard() {
                         </button>
                       </div>
 
+                      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                        <label className="grid gap-1 text-xs font-medium text-zinc-600">
+                          Points
+                          <input
+                            min="0"
+                            step="0.01"
+                            type="number"
+                            value={stage.points}
+                            onChange={(event) => updateStageRow(index, 'points', event.target.value)}
+                            className="input"
+                            placeholder="112"
+                          />
+                        </label>
+
+                        <label className="grid gap-1 text-xs font-medium text-zinc-600">
+                          Time
+                          <input
+                            min="0"
+                            step="0.01"
+                            type="number"
+                            value={stage.time}
+                            onChange={(event) => updateStageRow(index, 'time', event.target.value)}
+                            className="input"
+                            placeholder="21.74"
+                          />
+                        </label>
+
+                        <label className="grid gap-1 text-xs font-medium text-zinc-600">
+                          Penalties
+                          <input
+                            min="0"
+                            type="number"
+                            value={stage.penalties}
+                            onChange={(event) => updateStageRow(index, 'penalties', event.target.value)}
+                            className="input"
+                            placeholder="0"
+                          />
+                        </label>
+
+                        <label className="grid gap-1 text-xs font-medium text-zinc-600">
+                          Stage place
+                          <input
+                            min="1"
+                            type="number"
+                            value={stage.stagePlacement}
+                            onChange={(event) => updateStageRow(index, 'stagePlacement', event.target.value)}
+                            className="input"
+                            placeholder="4"
+                          />
+                        </label>
+
+                        <label className="grid gap-1 text-xs font-medium text-zinc-600">
+                          Field size
+                          <input
+                            min="1"
+                            type="number"
+                            value={stage.stageTotalCompetitors}
+                            onChange={(event) => updateStageRow(index, 'stageTotalCompetitors', event.target.value)}
+                            className="input"
+                            placeholder="28"
+                          />
+                        </label>
+                      </div>
+
+                      <label className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-600">
+                        <input
+                          type="checkbox"
+                          checked={stage.classifier}
+                          onChange={(event) => updateStageRow(index, 'classifier', event.target.checked)}
+                          className="h-4 w-4 rounded border-zinc-300 accent-indigo-500"
+                        />
+                        Classifier stage
+                      </label>
+
                       <label className="grid gap-1 text-xs font-medium text-zinc-600">
                         YouTube URL
                         <input
@@ -1034,6 +1160,7 @@ function MatchDetail({
               index,
               totalStages: match.stages.length,
             })
+            const scoreSummary = buildStageScoreSummary(stage)
 
             return (
               <article key={stage.id} className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
@@ -1090,8 +1217,21 @@ function MatchDetail({
                         {stageDetails.notesTitle}
                       </p>
                       <p className="stage-review-detail-copy mt-2 text-sm leading-6">{stageDetails.notes}</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {scoreSummary.badges.map((badge) => (
+                          <span key={badge} className="rounded-full border border-zinc-200 px-2.5 py-1 text-xs font-semibold text-zinc-600">
+                            {badge}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {scoreSummary.metrics.map((metric) => (
+                        <div key={metric.label} className="stage-review-detail-card rounded-2xl border p-3">
+                          <p className="stage-review-detail-label text-xs font-semibold uppercase tracking-wide">{metric.label}</p>
+                          <p className="stage-review-detail-value mt-1 text-sm font-semibold">{metric.value}</p>
+                        </div>
+                      ))}
                       <div className="stage-review-detail-card rounded-2xl border p-3">
                         <p className="stage-review-detail-label text-xs font-semibold uppercase tracking-wide">Round context</p>
                         <p className="stage-review-detail-value mt-1 text-sm font-semibold">{stageDetails.roundsLabel}</p>
