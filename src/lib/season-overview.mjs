@@ -24,16 +24,19 @@ export function formatMaintenanceSignal(log) {
       tone: 'empty',
       detail: 'Log a cleaning or inspection to start maintenance tracking.',
       roundsSinceClean: 0,
+      source: 'maintenance',
     }
   }
 
   const roundsSinceClean = numberValue(log.totalRoundsSinceClean)
+  const source = log.source ?? 'maintenance'
   if (roundsSinceClean >= 1000) {
     return {
       label: 'Service due',
       tone: 'due',
-      detail: `${roundsSinceClean.toLocaleString()} rounds since clean. Schedule service before the next match.`,
+      detail: `${roundsSinceClean.toLocaleString()} rounds since clean${source === 'match-rounds' ? ' after match-round updates' : ''}. Schedule service before the next match.`,
       roundsSinceClean,
+      source,
     }
   }
 
@@ -41,16 +44,45 @@ export function formatMaintenanceSignal(log) {
     return {
       label: 'Watchlist',
       tone: 'watchlist',
-      detail: `${roundsSinceClean.toLocaleString()} rounds since clean. Inspect wear parts soon.`,
+      detail: `${roundsSinceClean.toLocaleString()} rounds since clean${source === 'match-rounds' ? ' after match-round updates' : ''}. Inspect wear parts soon.`,
       roundsSinceClean,
+      source,
     }
   }
 
   return {
     label: 'Healthy',
     tone: 'healthy',
-    detail: `${roundsSinceClean.toLocaleString()} rounds since clean. No immediate maintenance signal.`,
+    detail: `${roundsSinceClean.toLocaleString()} rounds since clean${source === 'match-rounds' ? ' after match-round updates' : ''}. No immediate maintenance signal.`,
     roundsSinceClean,
+    source,
+  }
+}
+
+export function buildMaintenanceRoundSource(matches = [], maintenanceLogs = []) {
+  const sortedMatches = sortByNewest(matches)
+  const latestMaintenance = sortByNewest(maintenanceLogs)[0] ?? null
+  if (!latestMaintenance) {
+    const totalMatchRounds = matches.reduce((sum, match) => sum + numberValue(match.roundsUsed), 0)
+    if (totalMatchRounds === 0) return null
+    return {
+      totalRoundsSinceClean: totalMatchRounds,
+      source: 'match-rounds',
+    }
+  }
+
+  const maintenanceDate = new Date(latestMaintenance.date).getTime()
+  const roundsAfterMaintenance = sortedMatches
+    .filter((match) => {
+      const matchDate = new Date(match.date).getTime()
+      return Number.isFinite(matchDate) && Number.isFinite(maintenanceDate) && matchDate > maintenanceDate
+    })
+    .reduce((sum, match) => sum + numberValue(match.roundsUsed), 0)
+
+  return {
+    ...latestMaintenance,
+    totalRoundsSinceClean: numberValue(latestMaintenance.totalRoundsSinceClean) + roundsAfterMaintenance,
+    source: roundsAfterMaintenance > 0 ? 'match-rounds' : 'maintenance',
   }
 }
 
@@ -86,14 +118,14 @@ export function getRecentVideoStages(matches, limit = 3) {
 export function buildSeasonOverview({ matches = [], expenses = [], chronoEntries = [], maintenanceLogs = [] }) {
   const recentMatches = sortByNewest(matches).slice(0, 3)
   const latestChrono = sortByNewest(chronoEntries)[0] ?? null
-  const latestMaintenance = sortByNewest(maintenanceLogs)[0] ?? null
+  const maintenanceRoundSource = buildMaintenanceRoundSource(matches, maintenanceLogs)
   const totalMatchAmmoSpend = matches.reduce(
     (sum, match) => sum + numberValue(match.roundsUsed) * numberValue(match.ammoCostPerRound),
     0,
   )
   const totalExpenseSpend = expenses.reduce((sum, expense) => sum + numberValue(expense.amount), 0)
   const recentVideoStages = getRecentVideoStages(matches, 3)
-  const maintenanceSignal = formatMaintenanceSignal(latestMaintenance)
+  const maintenanceSignal = formatMaintenanceSignal(maintenanceRoundSource)
 
   const nextActions = []
   if (maintenanceSignal.tone === 'due') {

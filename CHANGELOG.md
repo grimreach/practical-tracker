@@ -4,6 +4,25 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.12.0] - 2026-05-30
+
+### Added
+
+- Added season analytics cards for best match, hardest match, most expensive month, and top load.
+- Added monthly trend charts for spend, rounds, percentile, power factor, and maintenance intervals.
+- Added monthly and quarterly report builders with framework-free tests.
+- Added maintenance reminders that include match rounds fired after the latest maintenance log.
+- Added signed-in JSON export at `/api/export`.
+- Added import preview validation at `/api/import/preview` so exports can be checked before any data mutation.
+- Added `RELEASE.md` with the release, Prisma migration, Vercel deployment, smoke-check, and data portability process.
+- Added Phase 7 cleanup/features pass to the roadmap.
+
+### Changed
+
+- Marked Phase 4 and Phase 5 complete in the roadmap.
+- Marked release documentation and import/export workflow complete in Phase 6 while keeping dependency audit remediation in a dedicated maintenance pass.
+- Bumped app version from `0.11.0` to `0.12.0`.
+
 ## [0.11.0] - 2026-05-30
 
 ### Added

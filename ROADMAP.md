@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-30
 
-Current app version: v0.11.0
+Current app version: v0.12.0
 
 ## Product direction
 
@@ -69,7 +69,7 @@ Acceptance criteria:
 
 ## Phase 4 — Connect the data model
 
-Status: in progress
+Status: complete
 
 - [x] Add equipment/firearm profiles with gun photos.
 - [x] Add build parts lists with component, model, notes/source, and cost totals.
@@ -77,7 +77,7 @@ Status: in progress
 - [x] Link matches to equipment profiles.
 - [x] Link chrono/load records to equipment and matches.
 - [x] Link expenses to matches/equipment when relevant.
-- [ ] Use match round counts to drive maintenance reminders.
+- [x] Use match round counts to drive maintenance reminders.
 
 Acceptance criteria:
 
@@ -85,12 +85,12 @@ Acceptance criteria:
 
 ## Phase 5 — Scoring and analytics depth
 
-Status: in progress
+Status: complete
 
 - [x] Add richer stage scoring fields: time, points, hit factor, penalties, stage placement, classifier flag.
-- [ ] Add charts for spend, rounds, percentile, PF/velocity, and maintenance intervals.
-- [ ] Add monthly/quarterly/season reports.
-- [ ] Add “best match / worst match / most expensive month / top load” report cards.
+- [x] Add charts for spend, rounds, percentile, PF/velocity, and maintenance intervals.
+- [x] Add monthly/quarterly/season reports.
+- [x] Add “best match / worst match / most expensive month / top load” report cards.
 
 Acceptance criteria:
 
@@ -102,16 +102,31 @@ Status: in progress
 
 - [x] Add automated tests for API routes and core form workflows.
 - [x] Add component smoke tests for major dashboard tabs.
-- [ ] Resolve dependency audit advisories in a dedicated maintenance PR.
-- [ ] Document deployment and release process.
-- [ ] Add import/export workflow for user data.
+- [ ] Resolve dependency audit advisories in a dedicated maintenance PR. Current audit advisories require upstream/breaking package movement, so keep this in a maintenance pass instead of forcing downgrades.
+- [x] Document deployment and release process.
+- [x] Add import/export workflow for user data.
 
 Acceptance criteria:
 
 - Releases are repeatable, testable, and safer to deploy.
 
+## Phase 7 — Cleanup and feature pass
+
+Status: proposed
+
+- [ ] Cleanup pass: consolidate repeated dashboard card styles, relationship labels, and chart empty states.
+- [ ] Feature pass: add PractiScore CSV import preview and confirm flow.
+- [ ] Feature pass: add workbook/spreadsheet import as a separate non-overlapping flow.
+- [ ] Feature pass: add iOS companion API contracts for authenticated sync.
+- [ ] Feature pass: plan Bluetooth chrono capture around normalized chrono/load records.
+
+Acceptance criteria:
+
+- The next features build on the now-connected data model without turning imports or mobile sync into data silos.
+
 ## Recommended next PRs
 
-1. `feat: link records to equipment` — connect matches, chrono/load records, expenses, and maintenance to gun profiles.
-2. `feat: add richer stage scoring` — capture time, points, hit factor, penalties, placement, and classifier state.
-3. `feat: add season reports` — add monthly/quarterly rollups and best/worst/top report cards.
+1. `chore: cleanup dashboard patterns` — consolidate duplicated card, empty-state, and relationship UI helpers.
+2. `feat: add PractiScore CSV import preview` — parse exported match data before any mutation.
+3. `feat: add spreadsheet workbook import` — keep workbook inputs separate from PractiScore imports.
+4. `feat: add iOS companion sync contracts` — define authenticated mobile sync against the main account.

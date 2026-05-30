@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, AlertTriangle, Banknote, Clapperboard, Gauge, ListChecks, PlayCircle, Target, TrendingUp, Wrench } from 'lucide-react'
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { DISCIPLINES, fmt$, fmtDate } from '@/lib/constants'
 import { buildSeasonOverview } from '@/lib/season-overview.mjs'
+import { buildSeasonReportCards, buildTrendChartData } from '@/lib/season-reports.mjs'
 
 type Stage = {
   id: string
@@ -45,6 +47,7 @@ type MaintenanceLog = {
 }
 
 type Overview = ReturnType<typeof buildSeasonOverview>
+type ReportCard = { title: string; label: string; value: string; detail: string } | null
 type OverviewTab = 'matches' | 'expenses' | 'chrono' | 'maintenance'
 
 type SeasonOverviewProps = {
@@ -63,6 +66,23 @@ function metricCard(label: string, value: string, detail: string, icon: React.Re
     </article>
   )
 }
+function reportCard(card: ReportCard, fallback: string) {
+  return (
+    <article className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
+      {card ? (
+        <>
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">{card.title}</span>
+          <strong className="mt-3 block text-2xl font-semibold tracking-tight text-zinc-950">{card.value}</strong>
+          <p className="mt-1 text-sm font-medium text-zinc-800">{card.label}</p>
+          <p className="mt-2 text-sm leading-6 text-zinc-500">{card.detail}</p>
+        </>
+      ) : (
+        <p className="text-sm leading-6 text-zinc-500">{fallback}</p>
+      )}
+    </article>
+  )
+}
+
 
 function maintenanceClass(tone: string) {
   if (tone === 'due') return 'border-red-200 bg-red-50 text-red-700'
@@ -125,6 +145,14 @@ export function SeasonOverviewDashboard({ onNavigate }: SeasonOverviewProps) {
     () => buildSeasonOverview({ matches, expenses, chronoEntries, maintenanceLogs }) as Overview,
     [chronoEntries, expenses, maintenanceLogs, matches],
   )
+  const chartData = useMemo(
+    () => buildTrendChartData({ matches, expenses, chronoEntries, maintenanceLogs }),
+    [chronoEntries, expenses, maintenanceLogs, matches],
+  )
+  const reportCards = useMemo(
+    () => buildSeasonReportCards({ matches, expenses, chronoEntries }),
+    [chronoEntries, expenses, matches],
+  )
 
   if (isLoading) {
     return (
@@ -166,13 +194,21 @@ export function SeasonOverviewDashboard({ onNavigate }: SeasonOverviewProps) {
             </div>
             <strong className="mt-3 block text-2xl">{overview.maintenanceSignal.label}</strong>
             <p className="mt-2 text-sm leading-6">{overview.maintenanceSignal.detail}</p>
-            <button
-              type="button"
-              onClick={() => onNavigate('maintenance')}
-              className="mt-4 rounded-full border border-current px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] opacity-80 transition hover:opacity-100"
-            >
-              Open maintenance
-            </button>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => onNavigate('maintenance')}
+                className="rounded-full border border-current px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] opacity-80 transition hover:opacity-100"
+              >
+                Open maintenance
+              </button>
+              <a
+                href="/api/export"
+                className="rounded-full border border-current px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] opacity-80 transition hover:opacity-100"
+              >
+                Export data
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -184,6 +220,58 @@ export function SeasonOverviewDashboard({ onNavigate }: SeasonOverviewProps) {
         {metricCard('Avg percentile', `${overview.averagePercentile}%`, 'Average across scored matches.', <TrendingUp className="h-4 w-4" />)}
         {metricCard('Current PF', overview.currentPowerFactor ? String(overview.currentPowerFactor) : '—', 'Latest chrono PF, or recent match PF.', <Gauge className="h-4 w-4" />)}
         {metricCard('Video stages', overview.recentVideoStages.length.toLocaleString(), 'Recent stages ready to review.', <Clapperboard className="h-4 w-4" />)}
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {reportCard(reportCards.bestMatch, 'Add scored matches to identify your best performance.')}
+        {reportCard(reportCards.worstMatch, 'Add scored matches to find the hardest match to review.')}
+        {reportCard(reportCards.mostExpensiveMonth, 'Log expenses and match ammo cost to spot spend spikes.')}
+        {reportCard(reportCards.topLoad, 'Add chrono strings to surface your strongest current load.')}
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <h3 className="text-lg font-semibold text-zinc-950">Spend and rounds trend</h3>
+          <p className="text-sm text-zinc-500">Monthly rollup from match ammo cost plus logged expenses.</p>
+          <div className="mt-4 h-72">
+            {chartData.length === 0 ? (
+              <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-zinc-300 text-sm text-zinc-500">Add matches and expenses to build the trend.</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
+                  <XAxis dataKey="period" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Bar dataKey="Spend" fill="#18181b" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="Rounds" fill="#a1a1aa" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </article>
+
+        <article className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <h3 className="text-lg font-semibold text-zinc-950">Percentile, PF, and maintenance intervals</h3>
+          <p className="text-sm text-zinc-500">Monthly scoring, chrono, and service rhythm for the season.</p>
+          <div className="mt-4 h-72">
+            {chartData.length === 0 ? (
+              <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-zinc-300 text-sm text-zinc-500">Add scored matches, chrono, or maintenance logs to build the trend.</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
+                  <XAxis dataKey="period" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="Percentile" stroke="#18181b" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="PF" stroke="#71717a" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Maintenance" stroke="#d97706" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </article>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">

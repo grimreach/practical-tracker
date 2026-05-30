@@ -14,7 +14,7 @@ export const DASHBOARD_TAB_SMOKE_CONTRACTS = [
     sourcePath: 'src/app/season-overview-dashboard.tsx',
     primaryHeading: 'Season Overview',
     emptyState: 'Log a match to start the season overview.',
-    apiRoutes: ['/api/matches', '/api/expenses', '/api/chrono', '/api/maintenance'],
+    apiRoutes: ['/api/matches', '/api/expenses', '/api/chrono', '/api/maintenance', '/api/export'],
   },
   {
     id: 'matches',

@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  buildMaintenanceRoundSource,
   buildSeasonOverview,
   formatMaintenanceSignal,
   getRecentVideoStages,
@@ -111,4 +112,34 @@ test('formats maintenance signals at healthy, watchlist, and due thresholds', ()
   assert.equal(formatMaintenanceSignal({ totalRoundsSinceClean: 250 }).tone, 'healthy')
   assert.equal(formatMaintenanceSignal({ totalRoundsSinceClean: 650 }).tone, 'watchlist')
   assert.equal(formatMaintenanceSignal({ totalRoundsSinceClean: 1000 }).tone, 'due')
+})
+
+test('uses match round counts after the latest maintenance log to drive service reminders', () => {
+  const roundSource = buildMaintenanceRoundSource(
+    [
+      { id: 'old-match', date: '2026-05-01T00:00:00.000Z', roundsUsed: 400 },
+      { id: 'new-match', date: '2026-05-30T00:00:00.000Z', roundsUsed: 325 },
+    ],
+    [{ id: 'service', date: '2026-05-15T00:00:00.000Z', totalRoundsSinceClean: 500 }],
+  )
+
+  assert.equal(roundSource.totalRoundsSinceClean, 825)
+  assert.equal(roundSource.source, 'match-rounds')
+  assert.equal(formatMaintenanceSignal(roundSource).tone, 'watchlist')
+})
+
+test('falls back to total match rounds when no maintenance log exists yet', () => {
+  const overview = buildSeasonOverview({
+    matches: [
+      { id: 'match-a', date: '2026-05-10T00:00:00.000Z', roundsUsed: 600, ammoCostPerRound: 0.25, stages: [] },
+      { id: 'match-b', date: '2026-05-20T00:00:00.000Z', roundsUsed: 450, ammoCostPerRound: 0.25, stages: [] },
+    ],
+    expenses: [],
+    chronoEntries: [{ id: 'chrono', date: '2026-05-18T00:00:00.000Z', powerFactor: 130 }],
+    maintenanceLogs: [],
+  })
+
+  assert.equal(overview.maintenanceSignal.tone, 'due')
+  assert.equal(overview.maintenanceSignal.roundsSinceClean, 1050)
+  assert.equal(overview.maintenanceSignal.source, 'match-rounds')
 })
