@@ -1,4 +1,5 @@
 import { auth, signIn, signOut } from '@/auth'
+import { APP_VERSION_LABEL } from '@/lib/version'
 import { Activity, ArrowRight, Gauge, LogIn, ShieldCheck, Target, Wallet } from 'lucide-react'
 import { AppDashboard } from './app-dashboard'
 
@@ -41,6 +42,7 @@ export default async function Home() {
                     <span className="status-pill">
                       <ShieldCheck className="h-3.5 w-3.5" /> Synced
                     </span>
+                    <span className="sport-pill">{APP_VERSION_LABEL}</span>
                   </div>
                   <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
                     Practical Tracker
@@ -80,6 +82,7 @@ export default async function Home() {
               <span className="text-sm font-semibold tracking-tight text-zinc-100">
                 Practical Tracker
               </span>
+              <span className="sport-pill">{APP_VERSION_LABEL}</span>
             </div>
             <form
               action={async () => {
