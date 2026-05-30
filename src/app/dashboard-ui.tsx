@@ -58,3 +58,22 @@ export function DashboardStateBlock({ title, detail }: { title: string; detail: 
     </div>
   )
 }
+
+type DashboardRelationshipLabel = {
+  label: string
+  value: string
+}
+
+export function DashboardRelationshipLabels({ labels }: { labels: DashboardRelationshipLabel[] }) {
+  if (labels.length === 0) return null
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs font-medium text-zinc-500">
+      {labels.map((relationship) => (
+        <span key={`${relationship.label}:${relationship.value}`} className="rounded-full bg-zinc-100 px-2 py-0.5">
+          <span className="text-zinc-400">{relationship.label}:</span> {relationship.value}
+        </span>
+      ))}
+    </div>
+  )
+}

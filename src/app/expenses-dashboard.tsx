@@ -10,7 +10,8 @@ import {
   hasValidationErrors,
   validateExpenseForm,
 } from '@/lib/edit-flows.mjs'
-import { DashboardBadge as Badge, DashboardField as Field, DashboardMetric as Metric } from './dashboard-ui'
+import { dashboardRelationshipLabels } from '@/lib/dashboard-relationships.mjs'
+import { DashboardBadge as Badge, DashboardField as Field, DashboardMetric as Metric, DashboardRelationshipLabels as RelationshipLabels } from './dashboard-ui'
 
 type Gun = {
   id: string
@@ -397,13 +398,7 @@ export function ExpensesDashboard() {
                           {fmtDate(expense.date)}
                           {expense.vendor ? ` · ${expense.vendor}` : ''}
                         </p>
-                        {expense.gun || expense.match ? (
-                          <p className="mt-1 text-xs font-medium text-zinc-500">
-                            {[expense.gun?.name, expense.match ? expense.match.matchName || expense.match.club : null]
-                              .filter(Boolean)
-                              .join(' · ')}
-                          </p>
-                        ) : null}
+                        <RelationshipLabels labels={dashboardRelationshipLabels({ gun: expense.gun, match: expense.match })} />
                         {expense.notes ? (
                           <p className="mt-3 max-w-2xl text-sm text-zinc-600">{expense.notes}</p>
                         ) : null}

@@ -4,6 +4,14 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.14.2] - 2026-05-30
+
+### Changed
+
+- Standardized firearm and match relationship labels across match, chrono, and expense dashboard timelines/cards.
+- Added reusable dashboard relationship label helpers and tests so future dashboards present linked records consistently.
+- Bumped app version from `0.14.1` to `0.14.2`.
+
 ## [0.14.1] - 2026-05-30
 
 ### Changed

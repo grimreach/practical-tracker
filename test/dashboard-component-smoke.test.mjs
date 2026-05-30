@@ -85,6 +85,7 @@ test('dashboard form tabs share reusable UI primitives instead of local helper c
     'DashboardStat',
     'DashboardField',
     'DashboardStateBlock',
+    'DashboardRelationshipLabels',
   ]) {
     assert.match(sharedUiSource, new RegExp(`export function ${exportedName}\\b`))
   }

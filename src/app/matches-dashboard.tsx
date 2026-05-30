@@ -14,9 +14,10 @@ import {
   filterAndSortMatches,
   getMatchFilterSummary,
 } from '@/lib/match-history.mjs'
+import { dashboardRelationshipLabels } from '@/lib/dashboard-relationships.mjs'
 import { getStageReviewDetails } from '@/lib/stage-review.mjs'
 import { buildStageScoreSummary } from '@/lib/stage-scoring.mjs'
-import { DashboardBadge as Badge, DashboardField as Field, DashboardMetric as Metric, DashboardStat as Stat, DashboardStateBlock as StateBlock } from './dashboard-ui'
+import { DashboardBadge as Badge, DashboardField as Field, DashboardMetric as Metric, DashboardRelationshipLabels as RelationshipLabels, DashboardStat as Stat, DashboardStateBlock as StateBlock } from './dashboard-ui'
 
 type Gun = {
   id: string
@@ -726,7 +727,6 @@ export function MatchesDashboard() {
                               <Badge>{DISCIPLINES[match.discipline]}</Badge>
                               {match.division ? <Badge>{match.division}</Badge> : null}
                               <Badge>{MATCH_TIERS[match.tier]}</Badge>
-                              {match.gun ? <Badge>{match.gun.name}</Badge> : null}
                               {match.stages.length > 0 ? <Badge>{match.stages.length} stages</Badge> : null}
                               {match.dq ? (
                                 <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-700">
@@ -740,6 +740,7 @@ export function MatchesDashboard() {
                             <p className="mt-1 text-sm text-zinc-600">
                               {fmtDate(match.date)} · {match.club}
                             </p>
+                            <RelationshipLabels labels={dashboardRelationshipLabels({ gun: match.gun })} />
                           </div>
 
                           <div className={viewMode === 'cards' ? 'grid grid-cols-3 gap-3 text-left sm:text-right md:min-w-80' : 'grid grid-cols-3 gap-3 text-left sm:min-w-72 sm:text-right'}>
