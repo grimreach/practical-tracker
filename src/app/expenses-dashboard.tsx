@@ -1,6 +1,7 @@
 'use client'
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { ExternalLink, Filter, ReceiptText, Search, WalletCards } from 'lucide-react'
 import { EXPENSE_CATEGORIES, fmt$, fmtDate } from '@/lib/constants'
 
 type Expense = {
@@ -38,23 +39,82 @@ const initialForm: ExpenseForm = {
   notes: '',
 }
 
+const allCategories = Object.keys(EXPENSE_CATEGORIES) as ExpenseCategory[]
+
+function expenseMonth(value: string) {
+  return new Date(value).toISOString().slice(0, 7)
+}
+
+function monthLabel(value: string) {
+  const [year, month] = value.split('-').map(Number)
+  return new Date(year, month - 1, 1).toLocaleDateString('en-US', {
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
 export function ExpensesDashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [form, setForm] = useState<ExpenseForm>(initialForm)
+  const [query, setQuery] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState<ExpenseCategory | 'ALL'>('ALL')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const totalSpend = expenses.reduce((sum, expense) => sum + expense.amount, 0)
+  const currentMonth = today.slice(0, 7)
+  const currentMonthSpend = expenses
+    .filter((expense) => expenseMonth(expense.date) === currentMonth)
+    .reduce((sum, expense) => sum + expense.amount, 0)
+  const receiptCount = expenses.filter((expense) => expense.url).length
+  const averageExpense = expenses.length ? totalSpend / expenses.length : 0
+
   const categoryTotals = useMemo(() => {
     return expenses.reduce<Partial<Record<ExpenseCategory, number>>>((totals, expense) => {
       totals[expense.category] = (totals[expense.category] ?? 0) + expense.amount
       return totals
     }, {})
   }, [expenses])
-  const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0] as
-    | [ExpenseCategory, number]
-    | undefined
+
+  const categoryBreakdown = allCategories
+    .map((category) => ({ category, amount: categoryTotals[category] ?? 0 }))
+    .filter((entry) => entry.amount > 0)
+    .sort((a, b) => b.amount - a.amount)
+
+  const topCategory = categoryBreakdown[0]
+
+  const monthlyTotals = useMemo(() => {
+    const totals = expenses.reduce<Record<string, number>>((acc, expense) => {
+      const month = expenseMonth(expense.date)
+      acc[month] = (acc[month] ?? 0) + expense.amount
+      return acc
+    }, {})
+
+    return Object.entries(totals)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .slice(0, 6)
+      .map(([month, amount]) => ({ month, amount }))
+  }, [expenses])
+
+  const filteredExpenses = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+
+    return expenses.filter((expense) => {
+      const matchesCategory = categoryFilter === 'ALL' || expense.category === categoryFilter
+      const searchable = [
+        expense.item,
+        expense.vendor,
+        expense.notes,
+        EXPENSE_CATEGORIES[expense.category],
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+
+      return matchesCategory && (!normalizedQuery || searchable.includes(normalizedQuery))
+    })
+  }, [categoryFilter, expenses, query])
 
   useEffect(() => {
     let isActive = true
@@ -124,86 +184,219 @@ export function ExpensesDashboard() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-      <section className="min-w-0">
-        <div className="mb-4 grid gap-3 sm:grid-cols-3">
-          <Metric label="Expenses" value={expenses.length.toString()} />
-          <Metric label="Total spend" value={fmt$(totalSpend)} />
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
+      <section className="min-w-0 space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <Metric label="Total spend" value={fmt$(totalSpend)} detail={`${expenses.length} logged expenses`} />
+          <Metric label="This month" value={fmt$(currentMonthSpend)} detail={monthLabel(currentMonth)} />
           <Metric
             label="Top category"
-            value={topCategory ? EXPENSE_CATEGORIES[topCategory[0]] : '-'}
+            value={topCategory ? EXPENSE_CATEGORIES[topCategory.category] : '-'}
+            detail={topCategory ? fmt$(topCategory.amount) : 'No category spend yet'}
+          />
+          <Metric
+            label="Receipts"
+            value={`${receiptCount}/${expenses.length}`}
+            detail={`${fmt$(averageExpense)} average ticket`}
           />
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
-            <h2 className="text-base font-semibold text-zinc-950">Expenses</h2>
-            <span className="text-xs font-medium text-zinc-500">
-              {isLoading ? 'Loading...' : fmt$(totalSpend)}
-            </span>
-          </div>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
+          <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    <WalletCards className="h-3.5 w-3.5" /> Spend ledger
+                  </p>
+                  <h2 className="mt-1 text-xl font-semibold tracking-tight text-zinc-950">
+                    Expense command center
+                  </h2>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    Filter purchases, receipts, and training spend without losing the budget picture.
+                  </p>
+                </div>
+                <span className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-semibold text-zinc-600 shadow-sm">
+                  {isLoading ? 'Loading...' : `${filteredExpenses.length} visible`}
+                </span>
+              </div>
 
-          {error ? (
-            <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
+              <div className="mt-4 grid gap-2 md:grid-cols-[minmax(0,1fr)_220px]">
+                <label className="relative block">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    className="input pl-9"
+                    placeholder="Search item, vendor, notes, or category..."
+                  />
+                </label>
+                <label className="relative block">
+                  <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                  <select
+                    value={categoryFilter}
+                    onChange={(event) =>
+                      setCategoryFilter(event.target.value as ExpenseCategory | 'ALL')
+                    }
+                    className="input pl-9"
+                  >
+                    <option value="ALL">All categories</option>
+                    {allCategories.map((category) => (
+                      <option key={category} value={category}>
+                        {EXPENSE_CATEGORIES[category]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
             </div>
-          ) : null}
 
-          {isLoading ? (
-            <div className="px-4 py-10 text-center text-sm text-zinc-500">
-              Loading expenses...
-            </div>
-          ) : expenses.length === 0 ? (
-            <div className="px-4 py-10 text-center">
-              <p className="font-medium text-zinc-900">No expenses logged yet.</p>
-              <p className="mt-1 text-sm text-zinc-500">
-                Add match fees, ammo, parts, travel, and training costs here.
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-zinc-100">
-              {expenses.map((expense) => (
-                <article key={expense.id} className="px-4 py-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <h3 className="truncate font-semibold text-zinc-950">{expense.item}</h3>
-                      <p className="mt-1 text-sm text-zinc-600">
-                        {fmtDate(expense.date)}
-                        {expense.vendor ? ` · ${expense.vendor}` : ''}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-2 text-xs text-zinc-600">
-                        <Badge>{EXPENSE_CATEGORIES[expense.category]}</Badge>
-                        {expense.url ? (
-                          <a
-                            href={expense.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded bg-zinc-100 px-1.5 py-0.5 font-medium text-zinc-700 hover:bg-zinc-200"
-                          >
-                            Receipt
-                          </a>
+            {error ? (
+              <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            ) : null}
+
+            {isLoading ? (
+              <div className="px-4 py-10 text-center text-sm text-zinc-500">
+                Loading expenses...
+              </div>
+            ) : expenses.length === 0 ? (
+              <div className="px-4 py-12 text-center">
+                <p className="font-medium text-zinc-900">No expenses logged yet.</p>
+                <p className="mt-1 text-sm text-zinc-500">
+                  Add match fees, ammo, parts, travel, and training costs here.
+                </p>
+              </div>
+            ) : filteredExpenses.length === 0 ? (
+              <div className="px-4 py-12 text-center">
+                <p className="font-medium text-zinc-900">No expenses match that filter.</p>
+                <p className="mt-1 text-sm text-zinc-500">
+                  Clear the search or switch back to all categories.
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-zinc-100">
+                {filteredExpenses.map((expense) => (
+                  <article key={expense.id} className="px-4 py-4 transition hover:bg-zinc-50/80">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge>{EXPENSE_CATEGORIES[expense.category]}</Badge>
+                          {expense.url ? (
+                            <a
+                              href={expense.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-700 hover:bg-zinc-200"
+                            >
+                              Receipt
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          ) : null}
+                        </div>
+                        <h3 className="mt-2 truncate text-base font-semibold text-zinc-950">
+                          {expense.item}
+                        </h3>
+                        <p className="mt-1 text-sm text-zinc-600">
+                          {fmtDate(expense.date)}
+                          {expense.vendor ? ` · ${expense.vendor}` : ''}
+                        </p>
+                        {expense.notes ? (
+                          <p className="mt-3 max-w-2xl text-sm text-zinc-600">{expense.notes}</p>
                         ) : null}
                       </div>
-                      {expense.notes ? (
-                        <p className="mt-3 text-sm text-zinc-600">{expense.notes}</p>
-                      ) : null}
+                      <p className="shrink-0 text-lg font-semibold text-zinc-950">
+                        {fmt$(expense.amount)}
+                      </p>
                     </div>
-                    <p className="shrink-0 font-semibold text-zinc-950">{fmt$(expense.amount)}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <aside className="space-y-4">
+            <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    Category mix
+                  </p>
+                  <h3 className="mt-1 text-base font-semibold text-zinc-950">Where money is going</h3>
+                </div>
+                <ReceiptText className="h-5 w-5 text-zinc-400" />
+              </div>
+
+              {categoryBreakdown.length === 0 ? (
+                <p className="mt-4 text-sm text-zinc-500">Log expenses to see the spend mix.</p>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {categoryBreakdown.slice(0, 6).map((entry) => {
+                    const percent = totalSpend ? Math.round((entry.amount / totalSpend) * 100) : 0
+
+                    return (
+                      <div key={entry.category}>
+                        <div className="mb-1 flex items-center justify-between gap-3 text-sm">
+                          <span className="truncate font-medium text-zinc-700">
+                            {EXPENSE_CATEGORIES[entry.category]}
+                          </span>
+                          <span className="shrink-0 text-zinc-500">{fmt$(entry.amount)}</span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
+                          <div
+                            className="h-full rounded-full bg-zinc-900"
+                            style={{ width: `${Math.max(percent, 6)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Monthly pace
+              </p>
+              <h3 className="mt-1 text-base font-semibold text-zinc-950">Last 6 months</h3>
+              {monthlyTotals.length === 0 ? (
+                <p className="mt-4 text-sm text-zinc-500">Monthly totals appear after expenses are logged.</p>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {monthlyTotals.map((entry) => {
+                    const peak = Math.max(...monthlyTotals.map((month) => month.amount))
+                    const percent = peak ? Math.round((entry.amount / peak) * 100) : 0
+
+                    return (
+                      <div key={entry.month} className="grid grid-cols-[76px_minmax(0,1fr)_auto] items-center gap-3 text-sm">
+                        <span className="text-zinc-500">{monthLabel(entry.month)}</span>
+                        <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
+                          <div
+                            className="h-full rounded-full bg-zinc-900/80"
+                            style={{ width: `${Math.max(percent, 6)}%` }}
+                          />
+                        </div>
+                        <span className="font-medium text-zinc-700">{fmt$(entry.amount)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+          </aside>
         </div>
       </section>
 
-      <aside className="lg:sticky lg:top-6 lg:self-start">
+      <aside className="xl:sticky xl:top-6 xl:self-start">
         <form
           onSubmit={handleSubmit}
-          className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm"
+          className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
         >
           <div className="mb-4">
-            <h2 className="text-base font-semibold text-zinc-950">Log an Expense</h2>
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Quick capture</p>
+            <h2 className="mt-1 text-lg font-semibold text-zinc-950">Log an Expense</h2>
             <p className="mt-1 text-sm text-zinc-500">
               Keep match, ammo, parts, and travel spend in one place.
             </p>
@@ -301,18 +494,19 @@ export function ExpensesDashboard() {
   )
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value, detail }: { label: string; value: string; detail: string }) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+    <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
       <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</p>
       <p className="mt-1 truncate text-xl font-semibold text-zinc-950">{value}</p>
+      <p className="mt-1 truncate text-xs text-zinc-500">{detail}</p>
     </div>
   )
 }
 
 function Badge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-medium text-zinc-700">
+    <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-700">
       {children}
     </span>
   )
