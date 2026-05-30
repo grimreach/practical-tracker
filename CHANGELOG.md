@@ -4,6 +4,13 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.4.2] - 2026-05-29
+
+### Fixed
+
+- Fixed light mode form fields and dropdown menus so inputs use bright surfaces instead of dark-mode panels.
+- Bumped app version from `0.4.1` to `0.4.2`.
+
 ## [0.4.1] - 2026-05-29
 
 ### Changed
