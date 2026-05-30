@@ -14,6 +14,20 @@
   --tracker-accent-strong: #5e6ad2;
 }
 
+html[data-theme="light"] {
+  color-scheme: light;
+  --tracker-bg: #f6f4ef;
+  --tracker-panel: rgba(255, 255, 255, 0.78);
+  --tracker-panel-strong: rgba(255, 255, 255, 0.92);
+  --tracker-border: rgba(24, 24, 27, 0.11);
+  --tracker-border-soft: rgba(24, 24, 27, 0.075);
+  --tracker-text: #18181b;
+  --tracker-muted: #6b7280;
+  --tracker-soft: #3f3f46;
+  --tracker-accent: #4f46e5;
+  --tracker-accent-strong: #3730a3;
+}
+
 html {
   background: var(--tracker-bg);
 }
@@ -39,6 +53,13 @@ body {
   color: var(--tracker-text);
 }
 
+html[data-theme="light"] .tracker-shell {
+  background:
+    radial-gradient(circle at 16% -8%, rgba(79, 70, 229, 0.16), transparent 32rem),
+    radial-gradient(circle at 88% 0%, rgba(16, 185, 129, 0.11), transparent 30rem),
+    linear-gradient(180deg, #fbfaf7 0%, #f6f4ef 54%, #ece8df 100%);
+}
+
 .tracker-shell :where(.bg-zinc-50) {
   background-color: transparent;
 }
@@ -61,6 +82,10 @@ body {
 }
 
 .tracker-shell :where(.text-zinc-950, .text-zinc-900, .text-zinc-800) {
+  color: var(--tracker-text);
+}
+
+html[data-theme="light"] .tracker-shell :where(.text-zinc-50, .text-zinc-100) {
   color: var(--tracker-text);
 }
 
@@ -119,8 +144,24 @@ body {
   background: linear-gradient(90deg, #5e6ad2, #828fff);
 }
 
+html[data-theme="light"] .tracker-shell :where(.bg-indigo-500) {
+  background: linear-gradient(90deg, #4338ca, #818cf8);
+}
+
 .tracker-shell :where(.bg-red-50) {
   background: rgba(127, 29, 29, 0.24);
+}
+
+.tracker-shell :where(.bg-emerald-50) {
+  background: rgba(6, 95, 70, 0.22);
+}
+
+.tracker-shell :where(.border-emerald-200) {
+  border-color: rgba(52, 211, 153, 0.24);
+}
+
+.tracker-shell :where(.text-emerald-700) {
+  color: #86efac;
 }
 
 .tracker-shell :where(.border-red-100) {
@@ -183,7 +224,8 @@ body {
 }
 
 .status-pill,
-.sport-pill {
+.sport-pill,
+.theme-toggle {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -194,6 +236,39 @@ body {
   padding: 0.32rem 0.62rem;
   font-size: 0.72rem;
   font-weight: 600;
+}
+
+.theme-toggle {
+  padding: 0.36rem 0.7rem 0.36rem 0.42rem;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.theme-toggle-icon {
+  display: inline-flex;
+  height: 1.35rem;
+  width: 1.35rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #facc15;
+}
+
+html[data-theme="light"] .theme-toggle,
+html[data-theme="light"] .status-pill,
+html[data-theme="light"] .sport-pill {
+  border-color: rgba(24, 24, 27, 0.1);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+html[data-theme="light"] .theme-toggle-icon {
+  background: rgba(79, 70, 229, 0.1);
+  color: #4f46e5;
 }
 
 .primary-button,
@@ -249,6 +324,14 @@ body {
   height: 24rem;
   width: 24rem;
   background: rgba(16, 185, 129, 0.08);
+}
+
+html[data-theme="light"] .hero-glow-a {
+  background: rgba(79, 70, 229, 0.12);
+}
+
+html[data-theme="light"] .hero-glow-b {
+  background: rgba(245, 158, 11, 0.1);
 }
 
 .hero-panel {

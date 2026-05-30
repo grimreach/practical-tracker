@@ -86,6 +86,7 @@ export function ChronoDashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   const previewPf = powerFactorPreview(form.bulletWeight, form.avgVelocity)
   const averagePf = useMemo(() => {
@@ -136,6 +137,7 @@ export function ChronoDashboard() {
     event.preventDefault()
     setIsSaving(true)
     setError(null)
+    setSuccess(null)
 
     const payload = {
       date: form.date,
@@ -170,6 +172,7 @@ export function ChronoDashboard() {
     const created = (await res.json()) as ChronoEntry
     setEntries((current) => [created, ...current])
     setForm({ ...initialForm, date: form.date, bulletWeight: form.bulletWeight })
+    setSuccess('Chrono entry saved.')
     setIsSaving(false)
   }
 
@@ -199,6 +202,12 @@ export function ChronoDashboard() {
           {error ? (
             <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
+            </div>
+          ) : null}
+
+          {success ? (
+            <div className="border-b border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              {success}
             </div>
           ) : null}
 

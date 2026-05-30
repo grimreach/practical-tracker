@@ -1,7 +1,7 @@
 'use client'
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, Edit3, ExternalLink, PlayCircle, Plus, Trash2, X } from 'lucide-react'
+import { ArrowUpDown, ChevronLeft, Edit3, ExternalLink, Filter, LayoutGrid, List, PlayCircle, Plus, Search, Trash2, X } from 'lucide-react'
 import {
   DISCIPLINES,
   DIVISIONS,
@@ -9,6 +9,11 @@ import {
   fmt$,
   fmtDate,
 } from '@/lib/constants'
+import {
+  MATCH_SORTS,
+  filterAndSortMatches,
+  getMatchFilterSummary,
+} from '@/lib/match-history.mjs'
 
 type Match = {
   id: string
@@ -60,6 +65,11 @@ type StageForm = {
   youtubeUrl: string
   notes: string
 }
+
+type MatchSort = keyof typeof MATCH_SORTS
+type MatchViewMode = 'cards' | 'compact'
+type DisciplineFilter = keyof typeof DISCIPLINES | 'ALL'
+type TierFilter = keyof typeof MATCH_TIERS | 'ALL'
 
 const today = new Date().toISOString().slice(0, 10)
 
@@ -168,7 +178,13 @@ export function MatchesDashboard() {
   const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+  const [disciplineFilter, setDisciplineFilter] = useState<DisciplineFilter>('ALL')
+  const [tierFilter, setTierFilter] = useState<TierFilter>('ALL')
+  const [sortMode, setSortMode] = useState<MatchSort>('newest')
+  const [viewMode, setViewMode] = useState<MatchViewMode>('cards')
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   const divisions = useMemo(() => DIVISIONS[form.discipline] ?? [], [form.discipline])
   const matchCount = matches.length
@@ -178,6 +194,24 @@ export function MatchesDashboard() {
     0,
   )
   const selectedMatch = matches.find((match) => match.id === selectedMatchId) ?? null
+  const filteredMatches = useMemo(
+    () =>
+      filterAndSortMatches(matches, {
+        query,
+        discipline: disciplineFilter,
+        tier: tierFilter,
+        sort: sortMode,
+      }) as Match[],
+    [disciplineFilter, matches, query, sortMode, tierFilter],
+  )
+  const filterSummary = getMatchFilterSummary(filteredMatches.length, matchCount, {
+    query,
+    discipline: disciplineFilter,
+    tier: tierFilter,
+    sort: sortMode,
+  })
+  const hasActiveFilters =
+    query.trim() !== '' || disciplineFilter !== 'ALL' || tierFilter !== 'ALL' || sortMode !== 'newest'
 
   useEffect(() => {
     let isActive = true
@@ -229,6 +263,7 @@ export function MatchesDashboard() {
     setStageRows([])
     setEditingId(null)
     setError(null)
+    setSuccess(null)
   }
 
   function editMatch(match: Match) {
@@ -236,6 +271,7 @@ export function MatchesDashboard() {
     setStageRows(stageRowsFromMatch(match))
     setEditingId(match.id)
     setError(null)
+    setSuccess(null)
   }
 
   async function deleteMatch(match: Match) {
@@ -244,6 +280,7 @@ export function MatchesDashboard() {
 
     setDeletingId(match.id)
     setError(null)
+    setSuccess(null)
 
     const res = await fetch(`/api/matches/${match.id}`, { method: 'DELETE' })
     if (!res.ok) {
@@ -255,6 +292,7 @@ export function MatchesDashboard() {
     setMatches((current) => current.filter((item) => item.id !== match.id))
     setSelectedMatchId((current) => (current === match.id ? null : current))
     if (editingId === match.id) resetForm()
+    setSuccess('Match deleted.')
     setDeletingId(null)
   }
 
@@ -262,6 +300,7 @@ export function MatchesDashboard() {
     event.preventDefault()
     setIsSaving(true)
     setError(null)
+    setSuccess(null)
 
     if (stageRows.some((stage) => !isYouTubeUrl(stage.youtubeUrl))) {
       setError('Stage video links must be YouTube URLs.')
@@ -315,6 +354,7 @@ export function MatchesDashboard() {
     setForm({ ...initialForm, date: form.date })
     setStageRows([])
     setEditingId(null)
+    setSuccess(editingId ? 'Match updated.' : 'Match saved.')
     setIsSaving(false)
   }
 
@@ -368,9 +408,107 @@ export function MatchesDashboard() {
                 </p>
               </div>
               <span className="text-xs font-medium text-zinc-500">
-                {isLoading ? 'Loading...' : `${matchCount} logged`}
+                {isLoading ? 'Loading...' : filterSummary}
               </span>
             </div>
+
+            <div className="grid gap-2 border-b border-zinc-200 bg-zinc-50/60 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_180px_180px_170px_auto]">
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  className="input pl-9"
+                  placeholder="Search match, club, note, or stage..."
+                />
+              </label>
+              <label className="relative block">
+                <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                <select
+                  value={disciplineFilter}
+                  onChange={(event) => setDisciplineFilter(event.target.value as DisciplineFilter)}
+                  className="input pl-9"
+                >
+                  <option value="ALL">All disciplines</option>
+                  {Object.entries(DISCIPLINES).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="relative block">
+                <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                <select
+                  value={tierFilter}
+                  onChange={(event) => setTierFilter(event.target.value as TierFilter)}
+                  className="input pl-9"
+                >
+                  <option value="ALL">All tiers</option>
+                  {Object.entries(MATCH_TIERS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="relative block">
+                <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                <select
+                  value={sortMode}
+                  onChange={(event) => setSortMode(event.target.value as MatchSort)}
+                  className="input pl-9"
+                >
+                  {Object.entries(MATCH_SORTS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="grid grid-cols-2 gap-2" aria-label="Match layout">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('cards')}
+                  className={`inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition ${
+                    viewMode === 'cards'
+                      ? 'border-zinc-300 bg-white text-zinc-950 shadow-sm'
+                      : 'border-zinc-200 text-zinc-500 hover:bg-zinc-100'
+                  }`}
+                >
+                  <LayoutGrid className="h-4 w-4" /> Cards
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('compact')}
+                  className={`inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition ${
+                    viewMode === 'compact'
+                      ? 'border-zinc-300 bg-white text-zinc-950 shadow-sm'
+                      : 'border-zinc-200 text-zinc-500 hover:bg-zinc-100'
+                  }`}
+                >
+                  <List className="h-4 w-4" /> List
+                </button>
+              </div>
+            </div>
+
+            {hasActiveFilters ? (
+              <div className="flex flex-col gap-2 border-b border-zinc-200 px-4 py-3 text-sm text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+                <span>{filterSummary}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery('')
+                    setDisciplineFilter('ALL')
+                    setTierFilter('ALL')
+                    setSortMode('newest')
+                  }}
+                  className="font-semibold text-zinc-700 hover:text-zinc-950"
+                >
+                  Clear filters
+                </button>
+              </div>
+            ) : null}
 
             {error ? (
               <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -378,30 +516,41 @@ export function MatchesDashboard() {
               </div>
             ) : null}
 
+            {success ? (
+              <div className="border-b border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                {success}
+              </div>
+            ) : null}
+
             {isLoading ? (
-              <div className="px-4 py-10 text-center text-sm text-zinc-500">
-                Loading your match history...
-              </div>
+              <StateBlock title="Loading match history..." detail="Pulling match cards, stages, and video review links." />
             ) : matches.length === 0 ? (
-              <div className="px-4 py-10 text-center">
-                <p className="font-medium text-zinc-900">No matches logged yet.</p>
-                <p className="mt-1 text-sm text-zinc-500">
-                  Add your first match to start tracking placements, rounds, and ammo cost.
-                </p>
-              </div>
+              <StateBlock
+                title="No matches logged yet."
+                detail="Add your first match to start tracking placements, rounds, and ammo cost."
+              />
+            ) : filteredMatches.length === 0 ? (
+              <StateBlock
+                title="No matches match those filters."
+                detail="Clear the search or widen the discipline and tier filters to find prior matches."
+              />
             ) : (
-              <div className="grid gap-4 p-4">
-                {matches.map((match) => (
+              <div className={viewMode === 'cards' ? 'grid gap-4 p-4' : 'divide-y divide-zinc-100'}>
+                {filteredMatches.map((match) => (
                   <article
                     key={match.id}
-                    className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-zinc-300"
+                    className={
+                      viewMode === 'cards'
+                        ? 'group overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-zinc-300'
+                        : 'group bg-white px-4 py-3 transition hover:bg-zinc-50/80'
+                    }
                   >
                     <button
                       type="button"
                       onClick={() => setSelectedMatchId(match.id)}
                       className="block w-full p-0 text-left"
                     >
-                      <div className="relative overflow-hidden border-b border-zinc-200 bg-zinc-50 px-5 py-5">
+                      <div className={viewMode === 'cards' ? 'relative overflow-hidden border-b border-zinc-200 bg-zinc-50 px-5 py-5' : 'relative overflow-hidden px-0 py-1'}>
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(113,112,255,0.22),transparent_28rem)]" />
                         <div className="relative flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                           <div className="min-w-0">
@@ -416,7 +565,7 @@ export function MatchesDashboard() {
                                 </span>
                               ) : null}
                             </div>
-                            <h3 className="mt-3 truncate text-2xl font-semibold tracking-tight text-zinc-950">
+                            <h3 className={viewMode === 'cards' ? 'mt-3 truncate text-2xl font-semibold tracking-tight text-zinc-950' : 'mt-2 truncate text-base font-semibold tracking-tight text-zinc-950'}>
                               {match.matchName || match.club}
                             </h3>
                             <p className="mt-1 text-sm text-zinc-600">
@@ -424,7 +573,7 @@ export function MatchesDashboard() {
                             </p>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-3 text-right md:min-w-80">
+                          <div className={viewMode === 'cards' ? 'grid grid-cols-3 gap-3 text-left sm:text-right md:min-w-80' : 'grid grid-cols-3 gap-3 text-left sm:min-w-72 sm:text-right'}>
                             <Stat
                               label="Place"
                               value={
@@ -443,7 +592,7 @@ export function MatchesDashboard() {
                       </div>
                     </button>
 
-                    <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className={viewMode === 'cards' ? 'flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between' : 'mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'}>
                       <div className="text-sm text-zinc-600">
                         {match.powerFactor ? (
                           <span>
@@ -455,11 +604,11 @@ export function MatchesDashboard() {
                         )}
                         {match.notes ? <span> · {match.notes}</span> : null}
                       </div>
-                      <div className="flex justify-end gap-2">
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 sm:flex sm:justify-end">
                         <button
                           type="button"
                           onClick={() => setSelectedMatchId(match.id)}
-                          className="inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-100"
+                          className="inline-flex items-center justify-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-100"
                         >
                           <PlayCircle className="h-4 w-4" /> Review stages
                         </button>
@@ -699,8 +848,8 @@ export function MatchesDashboard() {
                       key={index}
                       className="grid gap-2 rounded-md border border-zinc-200 bg-white p-3"
                     >
-                      <div className="flex items-center gap-2">
-                        <label className="grid w-20 gap-1 text-xs font-medium text-zinc-600">
+                      <div className="grid gap-2 sm:grid-cols-[80px_minmax(0,1fr)_auto] sm:items-end">
+                        <label className="grid gap-1 text-xs font-medium text-zinc-600">
                           Stage
                           <input
                             min="1"
@@ -713,7 +862,7 @@ export function MatchesDashboard() {
                           />
                         </label>
 
-                        <label className="grid min-w-0 flex-1 gap-1 text-xs font-medium text-zinc-600">
+                        <label className="grid min-w-0 gap-1 text-xs font-medium text-zinc-600">
                           Name
                           <input
                             value={stage.stageName}
@@ -728,7 +877,7 @@ export function MatchesDashboard() {
                         <button
                           type="button"
                           onClick={() => removeStageRow(index)}
-                          className="mt-5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 hover:bg-zinc-100"
+                          className="inline-flex h-9 w-full shrink-0 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 hover:bg-zinc-100 sm:w-9"
                           aria-label={`Remove stage ${index + 1}`}
                           title="Remove stage"
                         >
@@ -818,7 +967,7 @@ function MatchDetail({
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 text-right md:min-w-80">
+          <div className="grid grid-cols-3 gap-3 text-left sm:text-right md:min-w-80">
             <Stat
               label="Place"
               value={
@@ -849,11 +998,11 @@ function MatchDetail({
               <span>{fmt$(match.roundsUsed * match.ammoCostPerRound)} ammo logged</span>
             ) : null}
           </p>
-          <div className="flex gap-2">
+          <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex">
             <button
               type="button"
               onClick={onEdit}
-              className="inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-100"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-100"
             >
               <Edit3 className="h-4 w-4" /> Edit
             </button>
@@ -861,7 +1010,7 @@ function MatchDetail({
               type="button"
               onClick={onDelete}
               disabled={isDeleting}
-              className="inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Trash2 className="h-4 w-4" /> Delete
             </button>
@@ -870,12 +1019,10 @@ function MatchDetail({
       </div>
 
       {match.stages.length === 0 ? (
-        <div className="px-4 py-12 text-center">
-          <p className="font-medium text-zinc-900">No stages attached yet.</p>
-          <p className="mt-1 text-sm text-zinc-500">
-            Edit this match and add stage names, review notes, and YouTube links.
-          </p>
-        </div>
+        <StateBlock
+          title="No stages attached yet."
+          detail="Edit this match and add stage names, review notes, and YouTube links."
+        />
       ) : (
         <div className="grid gap-4 p-4">
           {match.stages.map((stage) => {
@@ -933,6 +1080,15 @@ function MatchDetail({
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+function StateBlock({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="px-4 py-12 text-center">
+      <p className="font-medium text-zinc-900">{title}</p>
+      <p className="mx-auto mt-1 max-w-md text-sm text-zinc-500">{detail}</p>
     </div>
   )
 }
