@@ -1,7 +1,7 @@
 'use client'
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { Edit3, ExternalLink, Plus, Trash2, X } from 'lucide-react'
+import { ChevronLeft, Edit3, ExternalLink, PlayCircle, Plus, Trash2, X } from 'lucide-react'
 import {
   DISCIPLINES,
   DIVISIONS,
@@ -104,6 +104,34 @@ function isYouTubeUrl(value: string) {
   }
 }
 
+function youtubeEmbedUrl(value: string | null) {
+  if (!value) return null
+
+  try {
+    const url = new URL(value)
+    const host = url.hostname.replace(/^www\./, '')
+
+    if (host === 'youtu.be') {
+      const id = url.pathname.split('/').filter(Boolean)[0]
+      return id ? `https://www.youtube.com/embed/${id}` : null
+    }
+
+    if (host === 'youtube.com' || host.endsWith('.youtube.com')) {
+      if (url.pathname.startsWith('/embed/')) return url.toString()
+      if (url.pathname.startsWith('/shorts/')) {
+        const id = url.pathname.split('/').filter(Boolean)[1]
+        return id ? `https://www.youtube.com/embed/${id}` : null
+      }
+      const id = url.searchParams.get('v')
+      return id ? `https://www.youtube.com/embed/${id}` : null
+    }
+
+    return null
+  } catch {
+    return null
+  }
+}
+
 function formFromMatch(match: Match): FormState {
   return {
     date: dateForInput(match.date),
@@ -139,6 +167,7 @@ export function MatchesDashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const divisions = useMemo(() => DIVISIONS[form.discipline] ?? [], [form.discipline])
@@ -148,6 +177,7 @@ export function MatchesDashboard() {
     (sum, match) => sum + match.roundsUsed * match.ammoCostPerRound,
     0,
   )
+  const selectedMatch = matches.find((match) => match.id === selectedMatchId) ?? null
 
   useEffect(() => {
     let isActive = true
@@ -163,7 +193,11 @@ export function MatchesDashboard() {
           return
         }
 
-        setMatches(await res.json())
+        const loadedMatches = (await res.json()) as Match[]
+        setMatches(loadedMatches)
+        setSelectedMatchId((current) =>
+          current && loadedMatches.some((match) => match.id === current) ? current : null,
+        )
         setIsLoading(false)
       } catch {
         if (!isActive) return
@@ -219,6 +253,7 @@ export function MatchesDashboard() {
     }
 
     setMatches((current) => current.filter((item) => item.id !== match.id))
+    setSelectedMatchId((current) => (current === match.id ? null : current))
     if (editingId === match.id) resetForm()
     setDeletingId(null)
   }
@@ -276,6 +311,7 @@ export function MatchesDashboard() {
         ? current.map((match) => (match.id === saved.id ? saved : match))
         : [saved, ...current],
     )
+    setSelectedMatchId(saved.id)
     setForm({ ...initialForm, date: form.date })
     setStageRows([])
     setEditingId(null)
@@ -314,72 +350,119 @@ export function MatchesDashboard() {
           <Metric label="Ammo spend" value={fmt$(totalAmmoCost)} />
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
-            <h2 className="text-base font-semibold text-zinc-950">Matches</h2>
-            <span className="text-xs font-medium text-zinc-500">
-              {isLoading ? 'Loading...' : `${matchCount} logged`}
-            </span>
-          </div>
+        {selectedMatch ? (
+          <MatchDetail
+            match={selectedMatch}
+            onBack={() => setSelectedMatchId(null)}
+            onEdit={() => editMatch(selectedMatch)}
+            onDelete={() => void deleteMatch(selectedMatch)}
+            isDeleting={deletingId === selectedMatch.id}
+          />
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
+            <div className="flex flex-col gap-2 border-b border-zinc-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-zinc-950">Match Cards</h2>
+                <p className="mt-1 text-sm text-zinc-500">
+                  Hero summaries stay clean. Open a match to review every stage and embedded video.
+                </p>
+              </div>
+              <span className="text-xs font-medium text-zinc-500">
+                {isLoading ? 'Loading...' : `${matchCount} logged`}
+              </span>
+            </div>
 
-          {error ? (
-            <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          ) : null}
+            {error ? (
+              <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            ) : null}
 
-          {isLoading ? (
-            <div className="px-4 py-10 text-center text-sm text-zinc-500">
-              Loading your match history...
-            </div>
-          ) : matches.length === 0 ? (
-            <div className="px-4 py-10 text-center">
-              <p className="font-medium text-zinc-900">No matches logged yet.</p>
-              <p className="mt-1 text-sm text-zinc-500">
-                Add your first match to start tracking placements, rounds, and ammo cost.
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-zinc-100">
-              {matches.map((match) => (
-                <article key={match.id} className="px-4 py-4">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="truncate font-semibold text-zinc-950">
-                          {match.matchName || match.club}
-                        </h3>
-                        {match.dq ? (
-                          <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-700">
-                            DQ
+            {isLoading ? (
+              <div className="px-4 py-10 text-center text-sm text-zinc-500">
+                Loading your match history...
+              </div>
+            ) : matches.length === 0 ? (
+              <div className="px-4 py-10 text-center">
+                <p className="font-medium text-zinc-900">No matches logged yet.</p>
+                <p className="mt-1 text-sm text-zinc-500">
+                  Add your first match to start tracking placements, rounds, and ammo cost.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-4 p-4">
+                {matches.map((match) => (
+                  <article
+                    key={match.id}
+                    className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-zinc-300"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMatchId(match.id)}
+                      className="block w-full p-0 text-left"
+                    >
+                      <div className="relative overflow-hidden border-b border-zinc-200 bg-zinc-50 px-5 py-5">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(113,112,255,0.22),transparent_28rem)]" />
+                        <div className="relative flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge>{DISCIPLINES[match.discipline]}</Badge>
+                              {match.division ? <Badge>{match.division}</Badge> : null}
+                              <Badge>{MATCH_TIERS[match.tier]}</Badge>
+                              {match.stages.length > 0 ? <Badge>{match.stages.length} stages</Badge> : null}
+                              {match.dq ? (
+                                <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-700">
+                                  DQ
+                                </span>
+                              ) : null}
+                            </div>
+                            <h3 className="mt-3 truncate text-2xl font-semibold tracking-tight text-zinc-950">
+                              {match.matchName || match.club}
+                            </h3>
+                            <p className="mt-1 text-sm text-zinc-600">
+                              {fmtDate(match.date)} · {match.club}
+                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-3 text-right md:min-w-80">
+                            <Stat
+                              label="Place"
+                              value={
+                                match.placement && match.totalCompetitors
+                                  ? `${match.placement}/${match.totalCompetitors}`
+                                  : '-'
+                              }
+                            />
+                            <Stat
+                              label="Percentile"
+                              value={match.percentile === null ? '-' : `${match.percentile}%`}
+                            />
+                            <Stat label="Rounds" value={match.roundsUsed.toLocaleString()} />
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+
+                    <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="text-sm text-zinc-600">
+                        {match.powerFactor ? (
+                          <span>
+                            PF {match.powerFactor}
+                            {match.pfType ? ` (${match.pfType})` : ''}
                           </span>
-                        ) : null}
+                        ) : (
+                          <span>{fmt$(match.roundsUsed * match.ammoCostPerRound)} ammo logged</span>
+                        )}
+                        {match.notes ? <span> · {match.notes}</span> : null}
                       </div>
-                      <p className="mt-1 text-sm text-zinc-600">
-                        {fmtDate(match.date)} · {match.club}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-2 text-xs text-zinc-600">
-                        <Badge>{DISCIPLINES[match.discipline]}</Badge>
-                        {match.division ? <Badge>{match.division}</Badge> : null}
-                        <Badge>{MATCH_TIERS[match.tier]}</Badge>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-[repeat(3,minmax(0,1fr))_auto] gap-2 text-right md:min-w-80">
-                      <Stat
-                        label="Place"
-                        value={
-                          match.placement && match.totalCompetitors
-                            ? `${match.placement}/${match.totalCompetitors}`
-                            : '-'
-                        }
-                      />
-                      <Stat
-                        label="Percentile"
-                        value={match.percentile === null ? '-' : `${match.percentile}%`}
-                      />
-                      <Stat label="Rounds" value={match.roundsUsed.toLocaleString()} />
-                      <div className="flex justify-end gap-1">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMatchId(match.id)}
+                          className="inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-100"
+                        >
+                          <PlayCircle className="h-4 w-4" /> Review stages
+                        </button>
                         <IconButton label="Edit match" onClick={() => editMatch(match)}>
                           <Edit3 className="h-4 w-4" />
                         </IconButton>
@@ -392,62 +475,12 @@ export function MatchesDashboard() {
                         </IconButton>
                       </div>
                     </div>
-                  </div>
-
-                  {match.powerFactor || match.notes ? (
-                    <div className="mt-3 text-sm text-zinc-600">
-                      {match.powerFactor ? (
-                        <span>
-                          PF {match.powerFactor}
-                          {match.pfType ? ` (${match.pfType})` : ''}
-                        </span>
-                      ) : null}
-                      {match.powerFactor && match.notes ? <span> · </span> : null}
-                      {match.notes ? <span>{match.notes}</span> : null}
-                    </div>
-                  ) : null}
-
-                  {match.stages.length > 0 ? (
-                    <div className="mt-4 rounded-md border border-zinc-200 bg-zinc-50 p-3">
-                      <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                        Stage review
-                      </h4>
-                      <div className="mt-2 grid gap-2">
-                        {match.stages.map((stage) => (
-                          <div
-                            key={stage.id}
-                            className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm"
-                          >
-                            <div className="flex items-center justify-between gap-3">
-                              <span className="min-w-0 truncate font-medium text-zinc-800">
-                                Stage {stage.stageNum}
-                                {stage.stageName ? ` · ${stage.stageName}` : ''}
-                              </span>
-                              {stage.youtubeUrl ? (
-                                <a
-                                  href={stage.youtubeUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-700 hover:text-zinc-950"
-                                >
-                                  Video
-                                  <ExternalLink className="h-3.5 w-3.5" />
-                                </a>
-                              ) : null}
-                            </div>
-                            {stage.notes ? (
-                              <p className="mt-1 text-zinc-600">{stage.notes}</p>
-                            ) : null}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                </article>
-              ))}
-            </div>
-          )}
-        </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       <aside className="lg:sticky lg:top-6 lg:self-start">
@@ -741,6 +774,165 @@ export function MatchesDashboard() {
           </button>
         </form>
       </aside>
+    </div>
+  )
+}
+
+function MatchDetail({
+  match,
+  isDeleting,
+  onBack,
+  onDelete,
+  onEdit,
+}: {
+  match: Match
+  isDeleting: boolean
+  onBack: () => void
+  onDelete: () => void
+  onEdit: () => void
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
+      <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-4">
+        <button
+          type="button"
+          onClick={onBack}
+          className="mb-4 inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-100"
+        >
+          <ChevronLeft className="h-4 w-4" /> Match cards
+        </button>
+
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge>{DISCIPLINES[match.discipline]}</Badge>
+              {match.division ? <Badge>{match.division}</Badge> : null}
+              <Badge>{MATCH_TIERS[match.tier]}</Badge>
+              <Badge>{match.stages.length} stages</Badge>
+            </div>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950">
+              {match.matchName || match.club}
+            </h2>
+            <p className="mt-1 text-sm text-zinc-600">
+              {fmtDate(match.date)} · {match.club}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 text-right md:min-w-80">
+            <Stat
+              label="Place"
+              value={
+                match.placement && match.totalCompetitors
+                  ? `${match.placement}/${match.totalCompetitors}`
+                  : '-'
+              }
+            />
+            <Stat
+              label="Percentile"
+              value={match.percentile === null ? '-' : `${match.percentile}%`}
+            />
+            <Stat label="Rounds" value={match.roundsUsed.toLocaleString()} />
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-zinc-600">
+            {match.powerFactor ? (
+              <span>
+                PF {match.powerFactor}
+                {match.pfType ? ` (${match.pfType})` : ''}
+              </span>
+            ) : null}
+            {match.powerFactor && match.notes ? <span> · </span> : null}
+            {match.notes ? <span>{match.notes}</span> : null}
+            {!match.powerFactor && !match.notes ? (
+              <span>{fmt$(match.roundsUsed * match.ammoCostPerRound)} ammo logged</span>
+            ) : null}
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onEdit}
+              className="inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-100"
+            >
+              <Edit3 className="h-4 w-4" /> Edit
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={isDeleting}
+              className="inline-flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" /> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {match.stages.length === 0 ? (
+        <div className="px-4 py-12 text-center">
+          <p className="font-medium text-zinc-900">No stages attached yet.</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            Edit this match and add stage names, review notes, and YouTube links.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-4 p-4">
+          {match.stages.map((stage) => {
+            const embedUrl = youtubeEmbedUrl(stage.youtubeUrl)
+
+            return (
+              <article key={stage.id} className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                <div className="flex flex-col gap-2 border-b border-zinc-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                      Stage {stage.stageNum}
+                    </p>
+                    <h3 className="mt-1 text-lg font-semibold text-zinc-950">
+                      {stage.stageName || `Stage ${stage.stageNum}`}
+                    </h3>
+                  </div>
+                  {stage.youtubeUrl ? (
+                    <a
+                      href={stage.youtubeUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-700 hover:text-zinc-950"
+                    >
+                      Open YouTube
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  ) : null}
+                </div>
+
+                {embedUrl ? (
+                  <div className="aspect-video w-full overflow-hidden bg-black">
+                    <iframe
+                      className="h-full w-full"
+                      src={embedUrl}
+                      title={`Stage ${stage.stageNum} video`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  </div>
+                ) : (
+                  <div className="flex aspect-video w-full items-center justify-center bg-zinc-50 px-4 text-center text-sm text-zinc-500">
+                    {stage.youtubeUrl
+                      ? 'Could not embed this YouTube URL. Use a normal watch, shorts, or youtu.be link.'
+                      : 'No video link attached to this stage yet.'}
+                  </div>
+                )}
+
+                {stage.notes ? (
+                  <div className="border-t border-zinc-200 px-4 py-3 text-sm text-zinc-600">
+                    {stage.notes}
+                  </div>
+                ) : null}
+              </article>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
