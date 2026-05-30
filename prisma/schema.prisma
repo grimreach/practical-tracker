@@ -83,7 +83,6 @@ model Gun {
   name        String   // e.g. "Aero EPC-9 GRS Build"
   caliber     String   // 9mm, .223, .308, etc.
   discipline  String[] // which disciplines it's used for
-  imageUrl    String?  // Optional image/photo URL for the gun/build
   notes       String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -92,20 +91,6 @@ model Gun {
   matches      Match[]
   maintenance  MaintenanceLog[]
   chrono       ChronoEntry[]
-  buildParts   GunBuildPart[]
-}
-
-model GunBuildPart {
-  id            String   @id @default(cuid())
-  gunId         String
-  componentType String
-  brandModel    String
-  retailPrice   Float    @default(0)
-  notes         String?
-  sortOrder     Int      @default(0)
-  createdAt     DateTime @default(now())
-
-  gun Gun @relation(fields: [gunId], references: [id], onDelete: Cascade)
 }
 
 // ── Matches ────────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { hydrateGunBuildRecord, serializeGunBuildNotes } from '@/lib/gun-builds.mjs'
 
 const disciplineSchema = z.enum(['USPSA','SCSA','IPSC','IDPA','THREE_GUN','PRS','NRL22','RIMFIRE','OTHER'])
 
@@ -24,10 +25,8 @@ const gunSchema = z.object({
   buildParts: z.array(buildPartSchema).optional(),
 })
 
-const gunInclude = { buildParts: { orderBy: [{ sortOrder: 'asc' as const }, { createdAt: 'asc' as const }] } }
-
 async function getGun(id: string, userId: string) {
-  return prisma.gun.findFirst({ where: { id, userId }, include: gunInclude })
+  return prisma.gun.findFirst({ where: { id, userId } })
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -42,34 +41,22 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   const d = parsed.data
 
-  const gun = await prisma.$transaction(async (tx) => {
-    await tx.gunBuildPart.deleteMany({ where: { gunId: id } })
-    return tx.gun.update({
-      where: { id },
-      data: {
-        name: d.name,
-        caliber: d.caliber,
-        discipline: d.discipline,
-        imageUrl: d.imageUrl || null,
+  const gun = await prisma.gun.update({
+    where: { id },
+    data: {
+      name: d.name,
+      caliber: d.caliber,
+      discipline: d.discipline,
+      notes: serializeGunBuildNotes({
         notes: d.notes,
-        isActive: d.isActive,
-        buildParts: d.buildParts?.length
-          ? {
-              create: d.buildParts.map((part, index) => ({
-                componentType: part.componentType,
-                brandModel: part.brandModel,
-                retailPrice: part.retailPrice,
-                notes: part.notes,
-                sortOrder: part.sortOrder || index,
-              })),
-            }
-          : undefined,
-      },
-      include: gunInclude,
-    })
+        imageUrl: d.imageUrl,
+        buildParts: d.buildParts ?? [],
+      }),
+      isActive: d.isActive,
+    },
   })
 
-  return NextResponse.json(gun)
+  return NextResponse.json(hydrateGunBuildRecord(gun))
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
