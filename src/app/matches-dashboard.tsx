@@ -1083,22 +1083,22 @@ function MatchDetail({
                   </div>
                 )}
 
-                <div className="border-t border-zinc-200 bg-zinc-50/70 p-4">
+                <div className="stage-review-detail-strip border-t border-zinc-200 p-4">
                   <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(220px,0.42fr)]">
-                    <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                    <div className="stage-review-detail-card rounded-2xl border p-4">
+                      <p className="stage-review-detail-label text-xs font-semibold uppercase tracking-[0.18em]">
                         {stageDetails.notesTitle}
                       </p>
-                      <p className="mt-2 text-sm leading-6 text-zinc-600">{stageDetails.notes}</p>
+                      <p className="stage-review-detail-copy mt-2 text-sm leading-6">{stageDetails.notes}</p>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                      <div className="rounded-2xl border border-zinc-200 bg-white p-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Round context</p>
-                        <p className="mt-1 text-sm font-semibold text-zinc-900">{stageDetails.roundsLabel}</p>
+                      <div className="stage-review-detail-card rounded-2xl border p-3">
+                        <p className="stage-review-detail-label text-xs font-semibold uppercase tracking-wide">Round context</p>
+                        <p className="stage-review-detail-value mt-1 text-sm font-semibold">{stageDetails.roundsLabel}</p>
                       </div>
-                      <div className="rounded-2xl border border-zinc-200 bg-white p-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Load signal</p>
-                        <p className="mt-1 text-sm font-semibold text-zinc-900">{stageDetails.powerFactorLabel}</p>
+                      <div className="stage-review-detail-card rounded-2xl border p-3">
+                        <p className="stage-review-detail-label text-xs font-semibold uppercase tracking-wide">Load signal</p>
+                        <p className="stage-review-detail-value mt-1 text-sm font-semibold">{stageDetails.powerFactorLabel}</p>
                       </div>
                     </div>
                   </div>

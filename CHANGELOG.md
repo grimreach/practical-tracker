@@ -4,6 +4,17 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.8.1] - 2026-05-29
+
+### Fixed
+
+- Improved dark-theme contrast for stage detail panels below Match History YouTube embeds.
+- Replaced light card surfaces in dark mode with theme-safe stage review panels while preserving the clean light theme.
+
+### Changed
+
+- Bumped app version from `0.8.0` to `0.8.1`.
+
 ## [0.8.0] - 2026-05-29
 
 ### Added

@@ -1,7 +1,7 @@
 # Practical Tracker Roadmap
 
 Last updated: 2026-05-29  
-Current app version: v0.8.0
+Current app version: v0.8.1
 
 ## Product direction
 

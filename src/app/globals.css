@@ -199,6 +199,54 @@ html[data-theme="light"] .tracker-shell :where(.bg-indigo-500) {
   background: rgba(255, 255, 255, 0.035);
 }
 
+.stage-review-detail-strip {
+  background: linear-gradient(180deg, rgba(8, 9, 10, 0.72), rgba(12, 13, 16, 0.9));
+}
+
+.stage-review-detail-card {
+  border-color: rgba(255, 255, 255, 0.105);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.072), rgba(255, 255, 255, 0.044)),
+    rgba(13, 14, 18, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.stage-review-detail-label {
+  color: rgba(208, 214, 224, 0.7);
+}
+
+.stage-review-detail-copy {
+  color: rgba(247, 248, 248, 0.78);
+}
+
+.stage-review-detail-value {
+  color: rgba(247, 248, 248, 0.94);
+}
+
+html[data-theme="light"] .stage-review-detail-strip {
+  background: rgba(244, 244, 245, 0.72);
+}
+
+html[data-theme="light"] .stage-review-detail-card {
+  border-color: rgba(24, 24, 27, 0.11);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 1px 2px rgba(24, 24, 27, 0.04);
+}
+
+html[data-theme="light"] .stage-review-detail-label {
+  color: #71717a;
+}
+
+html[data-theme="light"] .stage-review-detail-copy {
+  color: #52525b;
+}
+
+html[data-theme="light"] .stage-review-detail-value {
+  color: #18181b;
+}
+
 html[data-theme="light"] .match-filter-panel {
   background: rgba(244, 244, 245, 0.72);
 }
