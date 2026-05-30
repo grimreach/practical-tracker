@@ -4,6 +4,20 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.9.0] - 2026-05-29
+
+### Added
+
+- Added Phase 5 richer stage scoring fields for points, time, penalties, stage placement, field size, and classifier flag.
+- Added automatic hit factor calculation from points and stage time.
+- Added stage scoring summaries to the Match History video review cards.
+- Added a database migration for the new stage scoring fields.
+- Added framework-free tests for hit factor calculation, stage score normalization, summary labels, and fallback states.
+
+### Changed
+
+- Bumped app version from `0.8.1` to `0.9.0`.
+
 ## [0.8.1] - 2026-05-29
 
 ### Fixed

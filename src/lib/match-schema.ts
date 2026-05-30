@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { normalizeStageScore } from '@/lib/stage-scoring.mjs'
 
 const youtubeUrlSchema = z.url().refine((value) => {
   const url = new URL(value)
@@ -11,14 +12,19 @@ export const stageSchema = z.object({
   stageNum: z.number().int().min(1),
   stageName: z.string().optional(),
   score: z.number().default(0),
-  time: z.number().optional(),
-  hits: z.number().int().optional(),
-  misses: z.number().int().default(0),
-  penalties: z.number().int().default(0),
+  points: z.number().min(0).optional(),
+  time: z.number().min(0).optional(),
+  hitFactor: z.number().min(0).optional(),
+  hits: z.number().int().min(0).optional(),
+  misses: z.number().int().min(0).default(0),
+  penalties: z.number().int().min(0).default(0),
+  stagePlacement: z.number().int().positive().optional(),
+  stageTotalCompetitors: z.number().int().positive().optional(),
+  classifier: z.boolean().default(false),
   dnf: z.boolean().default(false),
   youtubeUrl: youtubeUrlSchema.optional(),
   notes: z.string().optional(),
-})
+}).transform((stage) => normalizeStageScore(stage))
 
 export const matchSchema = z.object({
   date: z.string(),
