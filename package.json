@@ -1,6 +1,6 @@
 {
   "name": "practical-tracker",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Open-source match tracker for practical shooting competitors — USPSA, SCSA, IPSC, 3-Gun, PRS and more.",
   "scripts": {
