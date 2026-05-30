@@ -4,6 +4,18 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.10.0] - 2026-05-29
+
+### Added
+
+- Started Phase 6 reliability hardening with API create-contract tests for expenses, chrono entries, and maintenance logs.
+- Added shared API route contract helpers that validate payloads and build Prisma create data before routes hit the database.
+- Added tests covering invalid expense payloads, invalid chrono velocities, empty maintenance actions, safe maintenance defaults, blank expense URLs, and chrono power-factor calculation.
+
+### Changed
+
+- Bumped app version from `0.9.0` to `0.10.0`.
+
 ## [0.9.0] - 2026-05-29
 
 ### Added
