@@ -14,6 +14,7 @@ import {
   filterAndSortMatches,
   getMatchFilterSummary,
 } from '@/lib/match-history.mjs'
+import { getStageReviewDetails } from '@/lib/stage-review.mjs'
 
 type Match = {
   id: string
@@ -1027,31 +1028,41 @@ function MatchDetail({
         />
       ) : (
         <div className="grid gap-4 p-4">
-          {match.stages.map((stage) => {
+          {match.stages.map((stage, index) => {
             const embedUrl = youtubeEmbedUrl(stage.youtubeUrl)
+            const stageDetails = getStageReviewDetails(stage, match, {
+              index,
+              totalStages: match.stages.length,
+            })
 
             return (
               <article key={stage.id} className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                 <div className="flex flex-col gap-2 border-b border-zinc-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                      Stage {stage.stageNum}
+                      {stageDetails.eyebrow}
                     </p>
                     <h3 className="mt-1 text-lg font-semibold text-zinc-950">
-                      {stage.stageName || `Stage ${stage.stageNum}`}
+                      {stageDetails.title}
                     </h3>
+                    <p className="mt-1 text-sm text-zinc-500">{stageDetails.matchContext} · {stageDetails.dateLabel}</p>
                   </div>
-                  {stage.youtubeUrl ? (
-                    <a
-                      href={stage.youtubeUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-700 hover:text-zinc-950"
-                    >
-                      Open YouTube
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  ) : null}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${stageDetails.videoStatus.tone === 'ready' ? 'bg-emerald-50 text-emerald-700' : 'bg-zinc-100 text-zinc-600'}`}>
+                      {stageDetails.videoStatus.label}
+                    </span>
+                    {stage.youtubeUrl ? (
+                      <a
+                        href={stage.youtubeUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-700 hover:text-zinc-950"
+                      >
+                        Open YouTube
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    ) : null}
+                  </div>
                 </div>
 
                 {embedUrl ? (
@@ -1072,11 +1083,26 @@ function MatchDetail({
                   </div>
                 )}
 
-                {stage.notes ? (
-                  <div className="border-t border-zinc-200 px-4 py-3 text-sm text-zinc-600">
-                    {stage.notes}
+                <div className="border-t border-zinc-200 bg-zinc-50/70 p-4">
+                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(220px,0.42fr)]">
+                    <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                        {stageDetails.notesTitle}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-zinc-600">{stageDetails.notes}</p>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                      <div className="rounded-2xl border border-zinc-200 bg-white p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Round context</p>
+                        <p className="mt-1 text-sm font-semibold text-zinc-900">{stageDetails.roundsLabel}</p>
+                      </div>
+                      <div className="rounded-2xl border border-zinc-200 bg-white p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Load signal</p>
+                        <p className="mt-1 text-sm font-semibold text-zinc-900">{stageDetails.powerFactorLabel}</p>
+                      </div>
+                    </div>
                   </div>
-                ) : null}
+                </div>
               </article>
             )
           })}

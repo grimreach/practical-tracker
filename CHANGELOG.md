@@ -4,6 +4,17 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.8.0] - 2026-05-29
+
+### Added
+
+- Added stage detail context around Match History YouTube hero cards, including stage position, match context, date, video status, round context, load signal, and review notes.
+- Added framework-free tests for stage review detail labels, video status, and graceful fallback copy.
+
+### Changed
+
+- Bumped app version from `0.7.0` to `0.8.0`.
+
 ## [0.7.0] - 2026-05-29
 
 ### Added

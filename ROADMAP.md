@@ -1,7 +1,7 @@
 # Practical Tracker Roadmap
 
 Last updated: 2026-05-29  
-Current app version: v0.7.0
+Current app version: v0.8.0
 
 ## Product direction
 
@@ -72,6 +72,7 @@ Status: in progress
 
 - [x] Add equipment/firearm profiles with gun photos.
 - [x] Add build parts lists with component, model, notes/source, and cost totals.
+- [x] Connect stage video review cards to match context, round count, power factor, and notes.
 - [ ] Link matches to equipment profiles.
 - [ ] Link chrono/load records to equipment and matches.
 - [ ] Link expenses to matches/equipment when relevant.
