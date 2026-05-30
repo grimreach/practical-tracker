@@ -1,13 +1,14 @@
 'use client'
 
-import { Activity, Banknote, Gauge, Sparkles, Target, Wrench } from 'lucide-react'
+import { Activity, Banknote, Crosshair, Gauge, Sparkles, Target, Wrench } from 'lucide-react'
 import { useState } from 'react'
 import { ChronoDashboard } from './chrono-dashboard'
 import { ExpensesDashboard } from './expenses-dashboard'
+import { GunsDashboard } from './guns-dashboard'
 import { MaintenanceDashboard } from './maintenance-dashboard'
 import { MatchesDashboard } from './matches-dashboard'
 
-type Tab = 'matches' | 'expenses' | 'chrono' | 'maintenance'
+type Tab = 'matches' | 'guns' | 'expenses' | 'chrono' | 'maintenance'
 
 const tabs: Array<{
   id: Tab
@@ -16,6 +17,7 @@ const tabs: Array<{
   icon: React.ComponentType<{ className?: string }>
 }> = [
   { id: 'matches', label: 'Matches', description: 'Results, stage notes, video', icon: Activity },
+  { id: 'guns', label: 'Gun Builds', description: 'Photos, parts, build cost', icon: Crosshair },
   { id: 'expenses', label: 'Expenses', description: 'Fees, ammo, parts, travel', icon: Banknote },
   { id: 'chrono', label: 'Chrono', description: 'Loads, velocity, power factor', icon: Gauge },
   { id: 'maintenance', label: 'Maintenance', description: 'Round counts, service alerts', icon: Wrench },
@@ -65,7 +67,7 @@ export function AppDashboard() {
         </div>
       </section>
 
-      <nav className="dashboard-tabs grid gap-2 rounded-3xl border border-zinc-200 bg-white p-2 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+      <nav className="dashboard-tabs grid gap-2 rounded-3xl border border-zinc-200 bg-white p-2 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
         {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
@@ -90,6 +92,7 @@ export function AppDashboard() {
       </nav>
 
       {activeTab === 'matches' ? <MatchesDashboard /> : null}
+      {activeTab === 'guns' ? <GunsDashboard /> : null}
       {activeTab === 'expenses' ? <ExpensesDashboard /> : null}
       {activeTab === 'chrono' ? <ChronoDashboard /> : null}
       {activeTab === 'maintenance' ? <MaintenanceDashboard /> : null}

@@ -1,7 +1,7 @@
 # Practical Tracker Roadmap
 
 Last updated: 2026-05-29  
-Current app version: v0.4.0
+Current app version: v0.6.0
 
 ## Product direction
 
@@ -40,13 +40,13 @@ Acceptance criteria:
 
 ## Phase 2 — Make data safely editable
 
-Status: planned
+Status: complete
 
-- [ ] Add edit/delete support for expenses.
-- [ ] Add edit/delete support for chrono entries.
-- [ ] Add edit/delete support for maintenance entries.
-- [ ] Add confirmation and recovery-friendly UX for destructive actions.
-- [ ] Add validation messages close to the relevant fields.
+- [x] Add edit/delete support for expenses.
+- [x] Add edit/delete support for chrono entries.
+- [x] Add edit/delete support for maintenance entries.
+- [x] Add confirmation and recovery-friendly UX for destructive actions.
+- [x] Add validation messages close to the relevant fields.
 
 Acceptance criteria:
 
@@ -68,9 +68,10 @@ Acceptance criteria:
 
 ## Phase 4 — Connect the data model
 
-Status: planned
+Status: in progress
 
-- [ ] Add equipment/firearm profiles.
+- [x] Add equipment/firearm profiles with gun photos.
+- [x] Add build parts lists with component, model, notes/source, and cost totals.
 - [ ] Link matches to equipment profiles.
 - [ ] Link chrono/load records to equipment and matches.
 - [ ] Link expenses to matches/equipment when relevant.
