@@ -4,6 +4,18 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.14.0] - 2026-05-30
+
+### Added
+
+- Added a confirmed PractiScore CSV import apply endpoint at `/api/import/apply` using `workflow: "practiscore-csv-v1"` plus explicit `confirm: true` safety.
+- Added PractiScore CSV import planning for match/stage creation payloads, duplicate skipping, missing-date blocking, and framework-free apply-plan tests.
+
+### Changed
+
+- Advanced the Phase 7 PractiScore import track with confirm/apply backend support complete and UI wiring still pending.
+- Bumped app version from `0.13.0` to `0.14.0`.
+
 ## [0.13.0] - 2026-05-30
 
 ### Added
