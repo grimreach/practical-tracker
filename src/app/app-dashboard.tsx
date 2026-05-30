@@ -1,8 +1,10 @@
 'use client'
 
-import { Activity, Banknote, Gauge, ShieldCheck, Sparkles, Target, Wrench } from 'lucide-react'
+import { Activity, Banknote, Gauge, Sparkles, Target, Wrench } from 'lucide-react'
 import { useState } from 'react'
+import { ChronoDashboard } from './chrono-dashboard'
 import { ExpensesDashboard } from './expenses-dashboard'
+import { MaintenanceDashboard } from './maintenance-dashboard'
 import { MatchesDashboard } from './matches-dashboard'
 
 type Tab = 'matches' | 'expenses' | 'chrono' | 'maintenance'
@@ -89,33 +91,8 @@ export function AppDashboard() {
 
       {activeTab === 'matches' ? <MatchesDashboard /> : null}
       {activeTab === 'expenses' ? <ExpensesDashboard /> : null}
-      {activeTab === 'chrono' ? <Placeholder title="Chrono" icon={Gauge} /> : null}
-      {activeTab === 'maintenance' ? <Placeholder title="Maintenance" icon={Wrench} /> : null}
+      {activeTab === 'chrono' ? <ChronoDashboard /> : null}
+      {activeTab === 'maintenance' ? <MaintenanceDashboard /> : null}
     </div>
-  )
-}
-
-function Placeholder({
-  title,
-  icon: Icon,
-}: {
-  title: string
-  icon: React.ComponentType<{ className?: string }>
-}) {
-  return (
-    <section className="placeholder-panel rounded-3xl border border-zinc-200 bg-white px-6 py-12 text-center shadow-sm">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-50 text-zinc-700">
-        <Icon className="h-6 w-6" />
-      </div>
-      <p className="eyebrow mt-5">Coming next</p>
-      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950">{title}</h2>
-      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-zinc-500">
-        The API surface is already in place. This workspace is reserved for the next UI pass with
-        the same card, metric, and form system used across matches and expenses.
-      </p>
-      <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-600">
-        <ShieldCheck className="h-3.5 w-3.5" /> Backend ready
-      </div>
-    </section>
   )
 }
