@@ -8,6 +8,7 @@ import {
   normalizeBuildParts,
   serializeGunBuildNotes,
   deserializeGunBuildNotes,
+  updateBuildPartForm,
   validateBuildPartForm,
   validateGunForm,
 } from '../src/lib/gun-builds.mjs'
@@ -43,6 +44,18 @@ test('converts an existing gun build into editable form state', () => {
     notes: '',
     sortOrder: '1',
   })
+})
+
+test('updates an existing build part price without rebuilding the part list', () => {
+  const forms = pccBuild.buildParts.map((part) => buildPartFormFromRecord(part))
+  const updated = updateBuildPartForm(forms, 1, { retailPrice: '125.50' })
+
+  assert.equal(updated[1].retailPrice, '125.50')
+  assert.equal(updated[1].componentType, 'Lower Receiver')
+  assert.equal(updated[1].brandModel, 'Aero Precision EPC-9 Lower')
+  assert.equal(updated[0].retailPrice, '599')
+  assert.notEqual(updated, forms)
+  assert.notEqual(updated[1], forms[1])
 })
 
 test('calculates build totals from parts without double-counting empty or invalid prices', () => {

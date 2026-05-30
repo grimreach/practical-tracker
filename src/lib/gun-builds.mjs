@@ -104,6 +104,12 @@ export function buildPartFormFromRecord(record) {
   }
 }
 
+export function updateBuildPartForm(parts, index, updates) {
+  return (parts ?? []).map((part, partIndex) => (
+    partIndex === index ? { ...part, ...updates } : part
+  ))
+}
+
 export function normalizeBuildParts(parts) {
   return [...(parts ?? [])].sort((a, b) => {
     const sortA = Number.isFinite(Number(a.sortOrder)) ? Number(a.sortOrder) : 0

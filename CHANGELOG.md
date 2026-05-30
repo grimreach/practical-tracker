@@ -4,6 +4,17 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.12.1] - 2026-05-30
+
+### Fixed
+
+- Made existing gun build part prices editable inline while editing a build, so saved part prices can be corrected without removing and re-adding the part.
+
+### Changed
+
+- Added the gun build price editing cleanup item to Phase 7.
+- Bumped app version from `0.12.0` to `0.12.1`.
+
 ## [0.12.0] - 2026-05-30
 
 ### Added

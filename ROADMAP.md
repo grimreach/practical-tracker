@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-30
 
-Current app version: v0.12.0
+Current app version: v0.12.1
 
 ## Product direction
 
@@ -114,6 +114,7 @@ Acceptance criteria:
 
 Status: proposed
 
+- [x] Cleanup pass: make gun build parts more editable by allowing saved part prices to be adjusted inline before saving the build.
 - [ ] Cleanup pass: consolidate repeated dashboard card styles, relationship labels, and chart empty states.
 - [ ] Feature pass: add PractiScore CSV import preview and confirm flow.
 - [ ] Feature pass: add workbook/spreadsheet import as a separate non-overlapping flow.
