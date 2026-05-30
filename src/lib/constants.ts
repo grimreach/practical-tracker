@@ -63,5 +63,5 @@ export const fmt$ = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
 
 export const fmtDate = (d: string | Date) =>
-  new Date(typeof d === 'string' ? d + 'T12:00:00' : d)
+  new Date(typeof d === 'string' && !d.includes('T') ? d + 'T12:00:00' : d)
     .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })
