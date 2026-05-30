@@ -42,6 +42,7 @@ test('tracks API dependencies used by data-backed dashboard components', () => {
     '/api/expenses',
     '/api/chrono',
     '/api/maintenance',
+    '/api/export',
   ])
   assert.deepEqual(getDashboardTabSmokeContract('matches').apiRoutes, ['/api/matches'])
   assert.deepEqual(getDashboardTabSmokeContract('guns').apiRoutes, ['/api/guns'])
