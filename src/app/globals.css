@@ -123,6 +123,18 @@ body {
   background: rgba(127, 29, 29, 0.24);
 }
 
+.tracker-shell :where(.bg-emerald-50) {
+  background: rgba(6, 95, 70, 0.22);
+}
+
+.tracker-shell :where(.border-emerald-200) {
+  border-color: rgba(52, 211, 153, 0.24);
+}
+
+.tracker-shell :where(.text-emerald-700) {
+  color: #86efac;
+}
+
 .tracker-shell :where(.border-red-100) {
   border-color: rgba(248, 113, 113, 0.22);
 }

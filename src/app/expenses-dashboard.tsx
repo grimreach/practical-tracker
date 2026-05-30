@@ -61,6 +61,7 @@ export function ExpensesDashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   const totalSpend = expenses.reduce((sum, expense) => sum + expense.amount, 0)
   const currentMonth = today.slice(0, 7)
@@ -154,6 +155,7 @@ export function ExpensesDashboard() {
     event.preventDefault()
     setIsSaving(true)
     setError(null)
+    setSuccess(null)
 
     const payload = {
       date: form.date,
@@ -180,6 +182,7 @@ export function ExpensesDashboard() {
     const created = (await res.json()) as Expense
     setExpenses((current) => [created, ...current])
     setForm({ ...initialForm, date: form.date })
+    setSuccess('Expense saved.')
     setIsSaving(false)
   }
 
@@ -254,6 +257,12 @@ export function ExpensesDashboard() {
             {error ? (
               <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
+              </div>
+            ) : null}
+
+            {success ? (
+              <div className="border-b border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                {success}
               </div>
             ) : null}
 

@@ -1,7 +1,7 @@
 # Practical Tracker Roadmap
 
 Last updated: 2026-05-29  
-Current app version: v0.2.0
+Current app version: v0.3.0
 
 ## Product direction
 
@@ -21,17 +21,17 @@ The near-term goal is to make the existing workflows trustworthy for daily use b
 
 ## Phase 1 — Finish core UX polish
 
-Status: in progress
+Status: complete
 
 - [x] Premium dashboard shell and landing page.
 - [x] Match hero cards with stage/video drilldown.
 - [x] Chrono / load development workspace.
 - [x] Maintenance workspace.
 - [x] Expense analytics command center.
-- [ ] Add match search/filter/sort controls.
-- [ ] Add compact/list toggle for match history.
-- [ ] Standardize loading, empty, error, and success states across all tabs.
-- [ ] Complete mobile-first pass for match video review and forms.
+- [x] Add match search/filter/sort controls.
+- [x] Add compact/list toggle for match history.
+- [x] Standardize loading, empty, error, and success states across all tabs.
+- [x] Complete mobile-first pass for match video review and forms.
 
 Acceptance criteria:
 

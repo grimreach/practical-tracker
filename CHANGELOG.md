@@ -4,6 +4,22 @@ All notable changes to Practical Tracker will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles, and the app uses semantic versioning.
 
+## [0.3.0] - 2026-05-29
+
+### Added
+
+- Added match history search across match names, clubs, notes, and stage details.
+- Added discipline and tier filters plus newest, oldest, percentile, and rounds-used sorting.
+- Added card/list layout toggle for match history.
+- Added reusable match history helper tests with `npm test`.
+
+### Changed
+
+- Improved match empty/loading/filter states and save/delete success feedback.
+- Tightened mobile layouts for match cards, stage review forms, and match detail actions.
+- Marked Phase 1 core UX polish complete in the roadmap.
+- Bumped app version from `0.2.0` to `0.3.0`.
+
 ## [0.2.0] - 2026-05-29
 
 ### Added
