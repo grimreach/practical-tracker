@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
 
   const payload = await req.json()
   const preview = validateImportPreviewPayload(payload)
-  if (!preview.success) return NextResponse.json({ error: preview.error }, { status: 400 })
+  if (!preview.success) {
+    const error = 'error' in preview ? String((preview as { error?: unknown }).error) : 'Invalid import preview payload.'
+    return NextResponse.json({ error }, { status: 400 })
+  }
 
   return NextResponse.json({
     ok: true,
