@@ -412,7 +412,7 @@ export function MatchesDashboard() {
               </span>
             </div>
 
-            <div className="space-y-3 border-b border-zinc-200 bg-zinc-50/60 px-4 py-4">
+            <div className="match-filter-panel space-y-3 border-b border-zinc-200 px-4 py-4">
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                 <input

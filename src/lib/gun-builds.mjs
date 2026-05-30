@@ -1,3 +1,5 @@
+const BUILD_METADATA_PREFIX = '[[practical-tracker:gun-build]]'
+
 function nullableString(value) {
   return value == null ? '' : String(value)
 }
@@ -16,14 +18,79 @@ function optionalHttpUrl(value) {
   return !url || /^https?:\/\//i.test(url)
 }
 
-export function gunFormFromRecord(record) {
+function normalizePart(part, index = 0) {
   return {
-    name: nullableString(record.name),
-    caliber: nullableString(record.caliber),
-    discipline: Array.isArray(record.discipline) ? record.discipline : [],
-    imageUrl: nullableString(record.imageUrl),
-    notes: nullableString(record.notes),
-    isActive: record.isActive !== false,
+    id: part.id,
+    componentType: nullableString(part.componentType),
+    brandModel: nullableString(part.brandModel),
+    retailPrice: Number.isFinite(Number(part.retailPrice)) ? Number(part.retailPrice) : 0,
+    notes: part.notes == null ? null : String(part.notes),
+    sortOrder: Number.isFinite(Number(part.sortOrder)) ? Number(part.sortOrder) : index + 1,
+  }
+}
+
+export function deserializeGunBuildNotes(value) {
+  const raw = nullableString(value)
+  const [plainNotes, metadata] = raw.split(`\n${BUILD_METADATA_PREFIX}`)
+
+  if (!metadata) {
+    return { notes: raw, imageUrl: '', buildParts: [] }
+  }
+
+  try {
+    const parsed = JSON.parse(metadata.trim())
+    return {
+      notes: plainNotes.trim(),
+      imageUrl: nullableString(parsed.imageUrl),
+      buildParts: Array.isArray(parsed.buildParts)
+        ? parsed.buildParts.map((part, index) => normalizePart(part, index))
+        : [],
+    }
+  } catch {
+    return { notes: raw, imageUrl: '', buildParts: [] }
+  }
+}
+
+/**
+ * @param {{
+ *   notes?: string,
+ *   imageUrl?: string,
+ *   buildParts?: Array<{
+ *     id?: string,
+ *     componentType?: string,
+ *     brandModel?: string,
+ *     retailPrice?: number | string,
+ *     notes?: string | null,
+ *     sortOrder?: number | string,
+ *   }>,
+ * }} input
+ */
+export function serializeGunBuildNotes({ notes = '', imageUrl = '', buildParts = [] }) {
+  const normalizedParts = (buildParts ?? []).map((part, index) => normalizePart(part, index))
+  const metadata = JSON.stringify({ imageUrl: nullableString(imageUrl), buildParts: normalizedParts })
+  const userNotes = nullableString(notes).trim()
+  return `${userNotes}\n${BUILD_METADATA_PREFIX}${metadata}`.trim()
+}
+
+export function hydrateGunBuildRecord(record) {
+  const metadata = deserializeGunBuildNotes(record.notes)
+  return {
+    ...record,
+    notes: metadata.notes,
+    imageUrl: metadata.imageUrl,
+    buildParts: normalizeBuildParts(metadata.buildParts),
+  }
+}
+
+export function gunFormFromRecord(record) {
+  const hydrated = record.buildParts || record.imageUrl ? record : hydrateGunBuildRecord(record)
+  return {
+    name: nullableString(hydrated.name),
+    caliber: nullableString(hydrated.caliber),
+    discipline: Array.isArray(hydrated.discipline) ? hydrated.discipline : [],
+    imageUrl: nullableString(hydrated.imageUrl),
+    notes: nullableString(hydrated.notes),
+    isActive: hydrated.isActive !== false,
   }
 }
 

@@ -344,13 +344,13 @@ export function GunsDashboard() {
           </div>
 
           <Field label="Build name" error={gunErrors.name}>
-            <input value={gunForm.name} onChange={(event) => setGunForm({ ...gunForm, name: event.target.value })} placeholder="9mm PCC Build" />
+            <input className="input" value={gunForm.name} onChange={(event) => setGunForm({ ...gunForm, name: event.target.value })} placeholder="9mm PCC Build" />
           </Field>
           <Field label="Caliber" error={gunErrors.caliber}>
-            <input value={gunForm.caliber} onChange={(event) => setGunForm({ ...gunForm, caliber: event.target.value })} placeholder="9mm" />
+            <input className="input" value={gunForm.caliber} onChange={(event) => setGunForm({ ...gunForm, caliber: event.target.value })} placeholder="9mm" />
           </Field>
           <Field label="Gun photo URL" error={gunErrors.imageUrl}>
-            <input value={gunForm.imageUrl} onChange={(event) => setGunForm({ ...gunForm, imageUrl: event.target.value })} placeholder="https://…/photo.jpg" />
+            <input className="input" value={gunForm.imageUrl} onChange={(event) => setGunForm({ ...gunForm, imageUrl: event.target.value })} placeholder="https://…/photo.jpg" />
           </Field>
 
           <div>
@@ -365,7 +365,7 @@ export function GunsDashboard() {
           </div>
 
           <Field label="Build notes">
-            <textarea value={gunForm.notes} onChange={(event) => setGunForm({ ...gunForm, notes: event.target.value })} rows={3} placeholder="Purpose, setup notes, reliability notes…" />
+            <textarea className="input" value={gunForm.notes} onChange={(event) => setGunForm({ ...gunForm, notes: event.target.value })} rows={3} placeholder="Purpose, setup notes, reliability notes…" />
           </Field>
 
           <div className="rounded-2xl border border-zinc-200 p-3">
@@ -377,13 +377,13 @@ export function GunsDashboard() {
               <Wrench className="h-4 w-4 text-zinc-400" />
             </div>
             <div className="mt-3 grid gap-2">
-              <input value={partForm.componentType} onChange={(event) => setPartForm({ ...partForm, componentType: event.target.value })} placeholder="Component type" />
+              <input className="input" value={partForm.componentType} onChange={(event) => setPartForm({ ...partForm, componentType: event.target.value })} placeholder="Component type" />
               {partErrors.componentType ? <p className="text-xs text-red-600">{partErrors.componentType}</p> : null}
-              <input value={partForm.brandModel} onChange={(event) => setPartForm({ ...partForm, brandModel: event.target.value })} placeholder="Brand & model" />
+              <input className="input" value={partForm.brandModel} onChange={(event) => setPartForm({ ...partForm, brandModel: event.target.value })} placeholder="Brand & model" />
               {partErrors.brandModel ? <p className="text-xs text-red-600">{partErrors.brandModel}</p> : null}
-              <input value={partForm.retailPrice} onChange={(event) => setPartForm({ ...partForm, retailPrice: event.target.value })} placeholder="Retail price" inputMode="decimal" />
+              <input className="input" value={partForm.retailPrice} onChange={(event) => setPartForm({ ...partForm, retailPrice: event.target.value })} placeholder="Retail price" inputMode="decimal" />
               {partErrors.retailPrice ? <p className="text-xs text-red-600">{partErrors.retailPrice}</p> : null}
-              <textarea value={partForm.notes} onChange={(event) => setPartForm({ ...partForm, notes: event.target.value })} rows={2} placeholder="Notes / source" />
+              <textarea className="input" value={partForm.notes} onChange={(event) => setPartForm({ ...partForm, notes: event.target.value })} rows={2} placeholder="Notes / source" />
               <button type="button" onClick={addPart} className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100">
                 <Plus className="h-4 w-4" /> Add part
               </button>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { hydrateGunBuildRecord, serializeGunBuildNotes } from '@/lib/gun-builds.mjs'
 
 const disciplineSchema = z.enum(['USPSA','SCSA','IPSC','IDPA','THREE_GUN','PRS','NRL22','RIMFIRE','OTHER'])
 
@@ -23,17 +24,14 @@ const gunSchema = z.object({
   buildParts: z.array(buildPartSchema).optional(),
 })
 
-const gunInclude = { buildParts: { orderBy: [{ sortOrder: 'asc' as const }, { createdAt: 'asc' as const }] } }
-
 export async function GET() {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const guns = await prisma.gun.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: 'desc' },
-    include: gunInclude,
   })
-  return NextResponse.json(guns)
+  return NextResponse.json(guns.map(hydrateGunBuildRecord))
 }
 
 export async function POST(req: NextRequest) {
@@ -49,22 +47,13 @@ export async function POST(req: NextRequest) {
       name: d.name,
       caliber: d.caliber,
       discipline: d.discipline,
-      imageUrl: d.imageUrl || null,
-      notes: d.notes,
+      notes: serializeGunBuildNotes({
+        notes: d.notes,
+        imageUrl: d.imageUrl,
+        buildParts: d.buildParts ?? [],
+      }),
       isActive: d.isActive,
-      buildParts: d.buildParts?.length
-        ? {
-            create: d.buildParts.map((part, index) => ({
-              componentType: part.componentType,
-              brandModel: part.brandModel,
-              retailPrice: part.retailPrice,
-              notes: part.notes,
-              sortOrder: part.sortOrder || index,
-            })),
-          }
-        : undefined,
     },
-    include: gunInclude,
   })
-  return NextResponse.json(gun, { status: 201 })
+  return NextResponse.json(hydrateGunBuildRecord(gun), { status: 201 })
 }

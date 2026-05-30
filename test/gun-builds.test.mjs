@@ -6,6 +6,8 @@ import {
   calculateBuildTotal,
   gunFormFromRecord,
   normalizeBuildParts,
+  serializeGunBuildNotes,
+  deserializeGunBuildNotes,
   validateBuildPartForm,
   validateGunForm,
 } from '../src/lib/gun-builds.mjs'
@@ -71,5 +73,29 @@ test('validates gun and build part forms near the relevant fields', () => {
     componentType: 'Component type is required.',
     brandModel: 'Brand/model is required.',
     retailPrice: 'Retail price cannot be negative.',
+  })
+})
+
+test('serializes gun build metadata into notes without requiring new database columns', () => {
+  const stored = serializeGunBuildNotes({
+    notes: 'GRS competition build',
+    imageUrl: 'https://example.com/pcc.jpg',
+    buildParts: [
+      { componentType: 'Lower Receiver', brandModel: 'Aero Precision EPC-9 Lower', retailPrice: 140, notes: 'MSRP', sortOrder: 1 },
+    ],
+  })
+
+  assert.equal(stored.includes('GRS competition build'), true)
+  const parsed = deserializeGunBuildNotes(stored)
+  assert.equal(parsed.notes, 'GRS competition build')
+  assert.equal(parsed.imageUrl, 'https://example.com/pcc.jpg')
+  assert.deepEqual(parsed.buildParts.map((part) => part.componentType), ['Lower Receiver'])
+})
+
+test('treats legacy plain gun notes as user notes with no build metadata', () => {
+  assert.deepEqual(deserializeGunBuildNotes('Plain notes from an older gun profile'), {
+    notes: 'Plain notes from an older gun profile',
+    imageUrl: '',
+    buildParts: [],
   })
 })

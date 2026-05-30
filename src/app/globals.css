@@ -187,12 +187,32 @@ html[data-theme="light"] .tracker-shell :where(.bg-indigo-500) {
   color: #86efac;
 }
 
-.tracker-shell :where(.border-red-100) {
+.tracker-shell :where(.border-red-100, .border-red-200) {
   border-color: rgba(248, 113, 113, 0.22);
 }
 
-.tracker-shell :where(.text-red-700) {
+.tracker-shell :where(.text-red-600, .text-red-700) {
   color: #fca5a5;
+}
+
+.match-filter-panel {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+html[data-theme="light"] .match-filter-panel {
+  background: rgba(244, 244, 245, 0.72);
+}
+
+html[data-theme="light"] .tracker-shell :where(.bg-red-50) {
+  background: #fef2f2;
+}
+
+html[data-theme="light"] .tracker-shell :where(.text-red-600, .text-red-700) {
+  color: #b91c1c;
+}
+
+html[data-theme="light"] .tracker-shell :where(.border-red-100, .border-red-200) {
+  border-color: #fecaca;
 }
 
 .dashboard-header,
